@@ -84,13 +84,14 @@
 
 @layer base {
 html {
-  font-size: 95%;
+  /* This scales down 1rem from 16px to 14px, making the entire website smaller */
+  font-size: 14px !important;
 }
 
 body {
   @apply bg-background text-on-background font-body;
   letter-spacing: -0.01em;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
   
   h1, h2, h3, h4, h5, h6 {
