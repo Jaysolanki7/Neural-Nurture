@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 import { secureStorage } from '../../lib/storage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStore } from '../../lib/store';
+import { getURL } from '../../lib/utils';
 
 
 export default function AuthPage() {
@@ -31,7 +32,7 @@ export default function AuthPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`
+          redirectTo: `${getURL()}auth/callback?next=/dashboard`
         }
       });
       if (error) {
@@ -51,7 +52,7 @@ export default function AuthPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email: otpEmail,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${getURL()}auth/callback`,
           shouldCreateUser: true
         }
       });
