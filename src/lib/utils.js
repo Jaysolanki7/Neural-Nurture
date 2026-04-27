@@ -6,7 +6,7 @@ export const getURL = () => {
   let url =
     process?.env?.NEXT_PUBLIC_SITE_URL ??
     process?.env?.NEXT_PUBLIC_VERCEL_URL ??
-    (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000/')
+    (typeof window !== 'undefined' ? window.location.origin : 'https://neural-nurture.vercel.app/')
 
   // Make sure to include `https://` when not localhost.
   if (!url.includes('http')) {
