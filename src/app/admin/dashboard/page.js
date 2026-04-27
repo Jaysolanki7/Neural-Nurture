@@ -60,6 +60,25 @@ export default function AdminDashboard() {
     }
   }, [activeTab, isAuthorized]);
 
+  const handleUserAction = async (userId, action) => {
+    if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, action })
+      });
+      if (res.ok) {
+        fetchUsers();
+      } else {
+        const d = await res.json();
+        alert(`Failed: ${d.error}`);
+      }
+    } catch (err) {
+      alert("Action failed. Check console.");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('Processing...');
@@ -230,6 +249,7 @@ export default function AdminDashboard() {
                         <th className="p-6 font-black">System Role</th>
                         <th className="p-6 font-black">Enrollment</th>
                         <th className="p-6 font-black">Last Sync</th>
+                        <th className="p-6 font-black text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="text-xs">
@@ -242,10 +262,20 @@ export default function AdminDashboard() {
                             </div>
                           </td>
                           <td className="p-6">
-                            <span className="px-3 py-1 bg-slate-50 text-slate-900/40 rounded-full font-bold uppercase tracking-widest text-[9px]">Patient</span>
+                            <span className={`px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-full ${u.is_banned ? 'bg-red-50 text-red-500' : 'bg-slate-50 text-slate-900/40'}`}>
+                              {u.is_banned ? 'Banned' : 'Patient'}
+                            </span>
                           </td>
                           <td className="p-6 text-slate-900/40 font-medium">{new Date(u.created_at).toLocaleDateString()}</td>
                           <td className="p-6 text-slate-900/40 font-medium">{u.last_sign_in ? new Date(u.last_sign_in).toLocaleDateString() : 'Never'}</td>
+                          <td className="p-6 text-right">
+                            <button onClick={() => handleUserAction(u.id, u.is_banned ? 'unban' : 'ban')} className={`text-[10px] font-bold uppercase px-3 py-1.5 rounded-lg mr-2 transition-colors ${u.is_banned ? 'bg-green-100 text-green-600 hover:bg-green-200' : 'bg-orange-100 text-orange-600 hover:bg-orange-200'}`}>
+                              {u.is_banned ? 'Unban' : 'Ban'}
+                            </button>
+                            <button onClick={() => handleUserAction(u.id, 'delete')} className="text-[10px] font-bold uppercase bg-red-100 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-200 transition-colors">
+                              Delete
+                            </button>
+                          </td>
                         </tr>
                       )) : (
                         <tr>

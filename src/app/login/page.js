@@ -16,13 +16,16 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [otpEmail, setOtpEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [isOtpMode, setIsOtpMode] = useState(false);
+  const [isResetMode, setIsResetMode] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [role, setRole] = useState('patient'); 
+  const [otpType, setOtpType] = useState('email');
   const router = useRouter();
   const setUser = useStore(state => state.setUser);
 
@@ -39,7 +42,11 @@ export default function AuthPage() {
 
   const validatePasswordFormat = (val) => {
     if (!val) return 'Password required';
-    if (val.length < 6) return 'Min 6 chars';
+    if (val.length < 8) return 'Min 8 chars';
+    if (!/[A-Z]/.test(val)) return 'Need 1 uppercase';
+    if (!/[a-z]/.test(val)) return 'Need 1 lowercase';
+    if (!/[0-9]/.test(val)) return 'Need 1 number';
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val)) return 'Need 1 special char';
     return '';
   };
 
@@ -57,26 +64,79 @@ export default function AuthPage() {
     else setPasswordError('');
   };
 
+  const formatPhoneNumber = (num) => {
+    let str = num.trim();
+    if (str.startsWith('+')) return str.replace(/\s+/g, '');
+    let cleaned = str.replace(/\D/g, '');
+    if (cleaned.length === 10) return `+91${cleaned}`;
+    if (cleaned.length > 10 && cleaned.startsWith('91')) return `+${cleaned}`;
+    return str.replace(/\s+/g, '');
+  };
+
   const handleOtpEmailChange = (e) => {
     const val = e.target.value;
     setOtpEmail(val);
-    if (val.length > 0) setEmailError(validateEmailFormat(val));
-    else setEmailError('');
+    if (val.length > 0 && val.includes('@')) setEmailError(validateEmailFormat(val));
+    else setEmailError(''); // No format validation for phone here
   };
 
   useEffect(() => {
     if (isOtpMode) {
-      setIsFormValid(otpEmail.length > 0 && !validateEmailFormat(otpEmail));
+      setIsFormValid(otpEmail.length > 0 && (!otpEmail.includes('@') || !validateEmailFormat(otpEmail)));
     } else {
       const eErr = validateEmailFormat(email);
       const pErr = validatePasswordFormat(password);
       if (isLoginMode) {
         setIsFormValid(!eErr && !pErr);
       } else {
-        setIsFormValid(!eErr && !pErr && firstName.trim().length > 0 && lastName.trim().length > 0);
+        setIsFormValid(!eErr && !pErr && firstName.trim().length > 0 && lastName.trim().length > 0 && phone.trim().length > 0);
       }
     }
-  }, [email, password, firstName, lastName, isLoginMode, isOtpMode, otpEmail]);
+  }, [email, password, firstName, lastName, phone, isLoginMode, isOtpMode, otpEmail]);
+
+  const handleKeyDown = (e, nextFieldId) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (nextFieldId) {
+        document.getElementById(nextFieldId)?.focus();
+      }
+    }
+  };
+
+  const handleOtpBoxChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = otpCode.split('');
+    newOtp[index] = value.substring(value.length - 1);
+    const updated = newOtp.join('').padEnd(index, ' ');
+    setOtpCode(updated);
+    
+    if (value && index < 5) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
+    }
+  };
+
+  const handleOtpBoxKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && (!otpCode[index] || otpCode[index] === ' ') && index > 0) {
+      document.getElementById(`otp-${index - 1}`)?.focus();
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMsg('');
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${getURL()}login?reset=true`
+    });
+    if (error) {
+      toast.error(error.message);
+      setErrorMsg(error.message);
+    } else {
+      toast.success("Password reset link sent to your email.");
+      setIsResetMode(false);
+    }
+    setLoading(false);
+  };
 
 
   const handleGoogleLogin = async () => {
@@ -101,19 +161,21 @@ export default function AuthPage() {
     setLoading(true);
     setErrorMsg('');
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: otpEmail,
-        options: {
-          emailRedirectTo: `${getURL()}auth/callback`,
-          shouldCreateUser: true
-        }
-      });
+      const isPhone = !otpEmail.includes('@');
+      const formattedContact = isPhone ? formatPhoneNumber(otpEmail) : otpEmail;
+      
+      const params = isPhone 
+        ? { phone: formattedContact } 
+        : { email: formattedContact, options: { emailRedirectTo: `${getURL()}auth/callback`, shouldCreateUser: true } };
+
+      const { error } = await supabase.auth.signInWithOtp(params);
       if (error) {
         setErrorMsg(error.message);
         toast.error(error.message);
       } else {
         setOtpSent(true);
-        toast.success('Check your email for the OTP code!');
+        setOtpType(isPhone ? 'sms' : 'email');
+        toast.success(`Check your ${isPhone ? 'phone' : 'email'} for the OTP code!`);
       }
     } catch (err) {
       toast.error("An unexpected error occurred.");
@@ -126,19 +188,23 @@ export default function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      let { data, error } = await supabase.auth.verifyOtp({
-        email: otpEmail,
-        token: otpCode,
-        type: 'email'
-      });
+      const isPhone = !otpEmail.includes('@');
+      const formattedContact = isPhone ? formatPhoneNumber(otpEmail) : otpEmail;
 
-      if (error) {
+      let verifyParams = {
+        token: otpCode,
+        type: otpType
+      };
+      
+      if (isPhone) verifyParams.phone = formattedContact;
+      else verifyParams.email = formattedContact;
+
+      let { data, error } = await supabase.auth.verifyOtp(verifyParams);
+
+      if (error && otpType === 'email') {
          // Some Supabase versions use 'magiclink' type for OTP sign-ins
-         const retry = await supabase.auth.verifyOtp({
-           email: otpEmail,
-           token: otpCode,
-           type: 'magiclink'
-         });
+         const retryParams = { ...verifyParams, type: 'magiclink' };
+         const retry = await supabase.auth.verifyOtp(retryParams);
          data = retry.data;
          error = retry.error;
       }
@@ -209,11 +275,12 @@ export default function AuthPage() {
         }
 
       } else {
+        const formattedPhone = phone ? formatPhoneNumber(phone) : phone;
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { first_name: firstName, last_name: lastName, role: role }
+            data: { first_name: firstName, last_name: lastName, role: role, phone: formattedPhone }
           }
         });
         if (error) {
@@ -221,16 +288,12 @@ export default function AuthPage() {
           setErrorMsg(error.message);
           setLoading(false);
         } else {
-          toast.success('Account Created! Please verify your email.');
-          secureStorage.setItem('user_name', firstName);
-          secureStorage.setItem('user_email', data.user?.email);
-          secureStorage.setItem('user_role', role);
-          if (data.session) {
-              secureStorage.setItem('session_id', data.session.access_token);
-          }
-          setTimeout(() => {
-            window.location.href = '/dashboard';
-          }, 2000);
+          toast.success('Account Created! Please check your email for the verification code.');
+          setOtpEmail(email);
+          setIsOtpMode(true);
+          setOtpSent(true);
+          setOtpType('signup');
+          setLoading(false);
         }
       }
     } catch (err) {
@@ -294,14 +357,14 @@ export default function AuthPage() {
           
           <div className="flex p-1.5 bg-slate-100/80 rounded-[18px] mb-8 border border-slate-200/50 backdrop-blur-md">
             <button 
-              onClick={() => { setIsLoginMode(true); setIsOtpMode(false); }}
-              className={`flex-1 py-3.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ${isLoginMode ? 'bg-white text-indigo-600 shadow-md border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
+              onClick={() => { setIsLoginMode(true); setIsOtpMode(false); setIsResetMode(false); }}
+              className={`flex-1 py-3.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ${isLoginMode && !isResetMode ? 'bg-white text-indigo-600 shadow-md border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Sign In
             </button>
             <button 
-              onClick={() => { setIsLoginMode(false); setIsOtpMode(false); }}
-              className={`flex-1 py-3.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ${!isLoginMode ? 'bg-white text-indigo-600 shadow-md border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
+              onClick={() => { setIsLoginMode(false); setIsOtpMode(false); setIsResetMode(false); }}
+              className={`flex-1 py-3.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ${!isLoginMode && !isResetMode ? 'bg-white text-indigo-600 shadow-md border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Register
             </button>
@@ -309,7 +372,7 @@ export default function AuthPage() {
 
           <AnimatePresence mode="wait">
             <motion.div
-              key={isOtpMode ? 'otp' : isLoginMode ? 'login' : 'register'}
+              key={isResetMode ? 'reset' : isOtpMode ? 'otp' : isLoginMode ? 'login' : 'register'}
               initial={{ opacity: 0, x: isLoginMode ? -10 : 10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: isLoginMode ? 10 : -10 }}
@@ -317,10 +380,10 @@ export default function AuthPage() {
             >
               <header className="mb-8">
                 <h2 className="text-[26px] font-extrabold text-slate-900 mb-2 tracking-tight">
-                  {isOtpMode ? 'One-Time Access' : isLoginMode ? 'Welcome Back' : 'Get Started'}
+                  {isResetMode ? 'Reset Password' : isOtpMode ? 'One-Time Access' : isLoginMode ? 'Welcome Back' : 'Get Started'}
                 </h2>
                 <p className="text-slate-500 text-sm font-medium leading-relaxed">
-                  {isOtpMode ? 'Verify your identity with the code sent to your email.' : isLoginMode ? 'Sign in to access your clinical diagnostics.' : 'Create your account to start your journey.'}
+                  {isResetMode ? 'Enter your email to receive a secure reset link.' : isOtpMode ? 'Verify your identity with the code sent to your email.' : isLoginMode ? 'Sign in to access your clinical diagnostics.' : 'Create your account to start your journey.'}
                 </p>
               </header>
 
@@ -331,20 +394,8 @@ export default function AuthPage() {
                 </div>
               )}
 
-              {!isOtpMode ? (
-                <form onSubmit={handleAuth} className="space-y-5">
-                  {!isLoginMode && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">First Name</label>
-                        <input required value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full bg-white/50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-4 px-5 text-slate-900 font-semibold transition-all outline-none" placeholder="Julian" type="text" />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Last Name</label>
-                        <input required value={lastName} onChange={e => setLastName(e.target.value)} className="w-full bg-white/50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-4 px-5 text-slate-900 font-semibold transition-all outline-none" placeholder="Moore" type="text" />
-                      </div>
-                    </div>
-                  )}
+              {isResetMode ? (
+                <form onSubmit={handleResetPassword} className="space-y-5">
                   <div className="space-y-2">
                     <div className="flex justify-between items-center ml-1">
                       <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Clinical Email</label>
@@ -359,6 +410,56 @@ export default function AuthPage() {
                         placeholder="name@mediai.com" 
                         type="email" 
                       />
+                    </div>
+                  </div>
+                  <button 
+                    disabled={loading || !email || emailError} 
+                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-bold text-[13px] uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/40 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-6" 
+                    type="submit"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">mail</span>
+                    <span>{loading ? 'Sending...' : 'Send Reset Link'}</span>
+                  </button>
+                  <div className="text-center mt-4">
+                    <button type="button" onClick={() => setIsResetMode(false)} className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-700 transition-colors">Back to Login</button>
+                  </div>
+                </form>
+              ) : !isOtpMode ? (
+                <form onSubmit={handleAuth} className="space-y-5">
+                  {!isLoginMode && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">First Name</label>
+                          <input id="firstName" required value={firstName} onChange={e => setFirstName(e.target.value)} onKeyDown={e => handleKeyDown(e, 'lastName')} className="w-full bg-white/50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-4 px-5 text-slate-900 font-semibold transition-all outline-none" placeholder="Julian" type="text" />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Last Name</label>
+                          <input id="lastName" required value={lastName} onChange={e => setLastName(e.target.value)} onKeyDown={e => handleKeyDown(e, 'phone')} className="w-full bg-white/50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-4 px-5 text-slate-900 font-semibold transition-all outline-none" placeholder="Moore" type="text" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Phone Number</label>
+                        <input id="phone" required value={phone} onChange={e => setPhone(e.target.value)} onKeyDown={e => handleKeyDown(e, 'email')} className="w-full bg-white/50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-4 px-5 text-slate-900 font-semibold transition-all outline-none" placeholder="+91 98765 43210" type="tel" />
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center ml-1">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Clinical Email</label>
+                      {emailError && <span className="text-[10px] font-bold text-red-500">{emailError}</span>}
+                    </div>
+                    <div className="relative">
+                      <input 
+                        id="email"
+                        required 
+                        value={email} 
+                        onChange={handleEmailChange} 
+                        onKeyDown={e => handleKeyDown(e, 'password')}
+                        className={`w-full bg-white/50 border ${emailError ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : email && !emailError ? 'border-green-400 focus:border-green-500 focus:ring-green-500/10' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/10'} focus:ring-4 rounded-2xl py-4 px-5 pr-12 text-slate-900 font-semibold transition-all outline-none`} 
+                        placeholder="name@mediai.com" 
+                        type="email" 
+                      />
                       {email && !emailError && (
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-green-500 text-[20px] pointer-events-none">check_circle</span>
                       )}
@@ -369,11 +470,12 @@ export default function AuthPage() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center ml-1">
-                      <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Access Password</label>
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Password</label>
                       {passwordError && <span className="text-[10px] font-bold text-red-500">{passwordError}</span>}
                     </div>
                     <div className="relative">
                       <input 
+                        id="password"
                         required 
                         value={password} 
                         onChange={handlePasswordChange} 
@@ -388,6 +490,13 @@ export default function AuthPage() {
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-red-500 text-[20px] pointer-events-none">error</span>
                       )}
                     </div>
+                    {isLoginMode && (
+                      <div className="flex justify-end mt-2">
+                        <button type="button" onClick={() => setIsResetMode(true)} className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 transition-colors uppercase tracking-widest">
+                          Forgot Password?
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <button 
@@ -403,18 +512,20 @@ export default function AuthPage() {
                 <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-5">
                   <div className="space-y-2">
                     <div className="flex justify-between items-center ml-1">
-                      <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Target Email</label>
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Email or Phone Number</label>
                       {emailError && <span className="text-[10px] font-bold text-red-500">{emailError}</span>}
                     </div>
                     <div className="relative">
                       <input 
+                        id="targetEmail"
                         required 
                         disabled={otpSent} 
                         value={otpEmail} 
                         onChange={handleOtpEmailChange} 
+                        onKeyDown={e => !otpSent ? handleKeyDown(e, 'submitOtp') : handleKeyDown(e, 'otpCode')}
                         className={`w-full bg-white/50 border ${emailError ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : otpEmail && !emailError ? 'border-green-400 focus:border-green-500 focus:ring-green-500/10' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/10'} focus:ring-4 rounded-2xl py-4 px-5 pr-12 text-slate-900 font-semibold transition-all outline-none`} 
-                        type="email" 
-                        placeholder="name@mediai.com" 
+                        type="text" 
+                        placeholder="name@mediai.com or +919876543210" 
                       />
                       {otpEmail && !emailError && (
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-green-500 text-[20px] pointer-events-none">check_circle</span>
@@ -428,13 +539,27 @@ export default function AuthPage() {
                     <div className="space-y-5 pt-3">
                       <div className="space-y-2">
                         <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">6-Digit Access Code</label>
-                        <input required value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-5 px-6 text-slate-900 font-black tracking-[0.7em] text-center text-2xl transition-all outline-none" type="text" maxLength={6} placeholder="••••••" />
+                        <div className="flex justify-between gap-2">
+                          {[0, 1, 2, 3, 4, 5].map(idx => (
+                            <input 
+                              key={idx}
+                              id={`otp-${idx}`}
+                              type="text" 
+                              maxLength={1}
+                              value={otpCode[idx] || ''}
+                              onChange={e => handleOtpBoxChange(idx, e.target.value)}
+                              onKeyDown={e => handleOtpBoxKeyDown(idx, e)}
+                              className="w-[15%] aspect-square bg-white/50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl text-slate-900 font-black text-center text-2xl transition-all outline-none"
+                            />
+                          ))}
+                        </div>
                       </div>
                       <button type="button" onClick={() => setOtpSent(false)} className="w-full text-[10px] font-bold uppercase tracking-widest text-indigo-500 hover:text-indigo-700 transition-colors">Wrong email? Change it</button>
                     </div>
                   )}
 
                   <button 
+                    id="submitOtp"
                     disabled={loading || (!otpSent && !isFormValid) || (otpSent && otpCode.length !== 6)} 
                     className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-bold text-[13px] uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/40 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none mt-6" 
                     type="submit"
