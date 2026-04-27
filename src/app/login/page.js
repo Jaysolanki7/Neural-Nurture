@@ -26,6 +26,58 @@ export default function AuthPage() {
   const router = useRouter();
   const setUser = useStore(state => state.setUser);
 
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  const validateEmailFormat = (val) => {
+    if (!val) return 'Email required';
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!re.test(val)) return 'Invalid email';
+    return '';
+  };
+
+  const validatePasswordFormat = (val) => {
+    if (!val) return 'Password required';
+    if (val.length < 6) return 'Min 6 chars';
+    return '';
+  };
+
+  const handleEmailChange = (e) => {
+    const val = e.target.value;
+    setEmail(val);
+    if (val.length > 0) setEmailError(validateEmailFormat(val));
+    else setEmailError('');
+  };
+
+  const handlePasswordChange = (e) => {
+    const val = e.target.value;
+    setPassword(val);
+    if (val.length > 0) setPasswordError(validatePasswordFormat(val));
+    else setPasswordError('');
+  };
+
+  const handleOtpEmailChange = (e) => {
+    const val = e.target.value;
+    setOtpEmail(val);
+    if (val.length > 0) setEmailError(validateEmailFormat(val));
+    else setEmailError('');
+  };
+
+  useEffect(() => {
+    if (isOtpMode) {
+      setIsFormValid(otpEmail.length > 0 && !validateEmailFormat(otpEmail));
+    } else {
+      const eErr = validateEmailFormat(email);
+      const pErr = validatePasswordFormat(password);
+      if (isLoginMode) {
+        setIsFormValid(!eErr && !pErr);
+      } else {
+        setIsFormValid(!eErr && !pErr && firstName.trim().length > 0 && lastName.trim().length > 0);
+      }
+    }
+  }, [email, password, firstName, lastName, isLoginMode, isOtpMode, otpEmail]);
+
 
   const handleGoogleLogin = async () => {
     try {
@@ -187,162 +239,207 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-green-50 flex items-center justify-center p-6 relative overflow-hidden font-['Manrope']">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative overflow-hidden font-['Manrope']">
       
       {/* High-Contrast Animated Background */}
       <div className="absolute inset-0 pointer-events-none">
         <motion.div 
-          animate={{ x: [0, 100, 0], y: [0, -50, 0], rotate: [0, 360] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-blue-900/20 rounded-full blur-[120px]" 
+          animate={{ x: [0, 150, 0], y: [0, -100, 0], scale: [1, 1.2, 1] }}
+          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-indigo-400/20 rounded-full blur-[120px]" 
         />
         <motion.div 
-          animate={{ x: [0, -100, 0], y: [0, 50, 0], rotate: [360, 0] }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-[-20%] left-[-10%] w-[700px] h-[700px] bg-indigo-900/20 rounded-full blur-[120px]" 
+          animate={{ x: [0, -150, 0], y: [0, 100, 0], scale: [1, 1.3, 1] }}
+          transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-[-20%] left-[-10%] w-[700px] h-[700px] bg-blue-400/20 rounded-full blur-[120px]" 
         />
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
+        <motion.div 
+          animate={{ x: [0, 50, 0], y: [0, 50, 0], scale: [1, 1.1, 1] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[20%] left-[30%] w-[500px] h-[500px] bg-purple-300/20 rounded-full blur-[100px]" 
+        />
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]" />
       </div>
 
       <Link href="/" className="absolute top-8 left-8 z-50 group">
         <motion.div 
           whileHover={{ scale: 1.1, x: -5 }}
           whileTap={{ scale: 0.9 }}
-          className="w-12 h-12 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 flex items-center justify-center text-blue-400 shadow-2xl transition-all"
+          className="w-12 h-12 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/60 flex items-center justify-center text-indigo-600 shadow-xl shadow-indigo-900/5 transition-all"
         >
           <span className="material-symbols-outlined font-bold">arrow_back</span>
         </motion.div>
       </Link>
 
       <motion.main 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6 }}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
         className="w-full max-w-[480px] relative z-10"
       >
         {/* Modern Branding */}
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center mb-10">
           <motion.div 
-            whileHover={{ rotate: 15 }}
-            className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-2xl shadow-blue-500/20 mb-4"
+            whileHover={{ rotate: 15, scale: 1.05 }}
+            className="w-20 h-20 rounded-[24px] bg-gradient-to-tr from-indigo-600 via-blue-600 to-cyan-500 flex items-center justify-center shadow-2xl shadow-indigo-500/30 mb-6 border-[3px] border-white/50 backdrop-blur-sm"
           >
-            <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>medical_services</span>
+            <span className="material-symbols-outlined text-white text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>medical_services</span>
           </motion.div>
-          <h1 className="text-4xl font-extrabold tracking-tighter text-slate-900 mb-1">Medi<span className="text-blue-600">AI</span></h1>
-          <p className="text-slate-400 font-bold tracking-[0.4em] text-[8px] uppercase">Quantum Clinical OS</p>
+          <h1 className="text-4xl font-extrabold tracking-tighter text-slate-900 mb-2">Medi<span className="text-indigo-600">AI</span></h1>
+          <p className="text-slate-500 font-bold tracking-[0.4em] text-[9px] uppercase">Quantum Clinical OS</p>
         </div>
 
         {/* High-Contrast Light Glass Card */}
-        <div className="bg-white/70 backdrop-blur-3xl p-10 rounded-[32px] border border-slate-200 shadow-2xl relative overflow-hidden">
+        <div className="bg-white/80 backdrop-blur-2xl p-10 rounded-[32px] border border-white/60 shadow-2xl shadow-indigo-900/10 relative overflow-hidden">
           
-          <div className="flex p-1 bg-slate-100 rounded-xl mb-8 border border-slate-200">
+          <div className="flex p-1.5 bg-slate-100/80 rounded-[18px] mb-8 border border-slate-200/50 backdrop-blur-md">
             <button 
               onClick={() => { setIsLoginMode(true); setIsOtpMode(false); }}
-              className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${isLoginMode ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`flex-1 py-3.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ${isLoginMode ? 'bg-white text-indigo-600 shadow-md border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Sign In
             </button>
             <button 
               onClick={() => { setIsLoginMode(false); setIsOtpMode(false); }}
-              className={`flex-1 py-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${!isLoginMode ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`flex-1 py-3.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300 ${!isLoginMode ? 'bg-white text-indigo-600 shadow-md border border-slate-200/50' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Register
             </button>
-
           </div>
 
           <AnimatePresence mode="wait">
             <motion.div
               key={isOtpMode ? 'otp' : isLoginMode ? 'login' : 'register'}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, x: isLoginMode ? -10 : 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: isLoginMode ? 10 : -10 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <header className="mb-8">
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                <h2 className="text-[26px] font-extrabold text-slate-900 mb-2 tracking-tight">
                   {isOtpMode ? 'One-Time Access' : isLoginMode ? 'Welcome Back' : 'Get Started'}
                 </h2>
-                <p className="text-slate-500 text-xs font-medium leading-relaxed">
+                <p className="text-slate-500 text-sm font-medium leading-relaxed">
                   {isOtpMode ? 'Verify your identity with the code sent to your email.' : isLoginMode ? 'Sign in to access your clinical diagnostics.' : 'Create your account to start your journey.'}
                 </p>
               </header>
 
               {errorMsg && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-[11px] font-bold flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[18px]">error</span>
+                <div className="mb-6 p-4 bg-red-50/80 border border-red-200 text-red-600 rounded-2xl text-xs font-bold flex items-center gap-3 shadow-sm backdrop-blur-md">
+                  <span className="material-symbols-outlined text-[20px]">error</span>
                   {errorMsg}
                 </div>
               )}
-
 
               {!isOtpMode ? (
                 <form onSubmit={handleAuth} className="space-y-5">
                   {!isLoginMode && (
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">First Name</label>
-                        <input required value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 focus:border-blue-600/50 rounded-xl py-3.5 px-5 text-slate-900 font-medium transition-all outline-none" placeholder="Julian" type="text" />
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">First Name</label>
+                        <input required value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full bg-white/50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-4 px-5 text-slate-900 font-semibold transition-all outline-none" placeholder="Julian" type="text" />
                       </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Last Name</label>
-                        <input required value={lastName} onChange={e => setLastName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 focus:border-blue-600/50 rounded-xl py-3.5 px-5 text-slate-900 font-medium transition-all outline-none" placeholder="Moore" type="text" />
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Last Name</label>
+                        <input required value={lastName} onChange={e => setLastName(e.target.value)} className="w-full bg-white/50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-4 px-5 text-slate-900 font-semibold transition-all outline-none" placeholder="Moore" type="text" />
                       </div>
                     </div>
                   )}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Clinical Email</label>
-                    <input required value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-slate-50 border border-slate-200 focus:border-blue-600/50 rounded-xl py-3.5 px-5 text-slate-900 font-medium transition-all outline-none" placeholder="name@mediai.com" type="email" />
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center ml-1">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Clinical Email</label>
+                      {emailError && <span className="text-[10px] font-bold text-red-500">{emailError}</span>}
+                    </div>
+                    <div className="relative">
+                      <input 
+                        required 
+                        value={email} 
+                        onChange={handleEmailChange} 
+                        className={`w-full bg-white/50 border ${emailError ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : email && !emailError ? 'border-green-400 focus:border-green-500 focus:ring-green-500/10' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/10'} focus:ring-4 rounded-2xl py-4 px-5 pr-12 text-slate-900 font-semibold transition-all outline-none`} 
+                        placeholder="name@mediai.com" 
+                        type="email" 
+                      />
+                      {email && !emailError && (
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-green-500 text-[20px] pointer-events-none">check_circle</span>
+                      )}
+                      {emailError && (
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-red-500 text-[20px] pointer-events-none">error</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Access Password</label>
-                    <input required value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-200 focus:border-blue-600/50 rounded-xl py-3.5 px-5 text-slate-900 font-medium transition-all outline-none" placeholder="••••••••" type="password" />
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center ml-1">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Access Password</label>
+                      {passwordError && <span className="text-[10px] font-bold text-red-500">{passwordError}</span>}
+                    </div>
+                    <div className="relative">
+                      <input 
+                        required 
+                        value={password} 
+                        onChange={handlePasswordChange} 
+                        className={`w-full bg-white/50 border ${passwordError ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : password && !passwordError ? 'border-green-400 focus:border-green-500 focus:ring-green-500/10' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/10'} focus:ring-4 rounded-2xl py-4 px-5 pr-12 text-slate-900 font-semibold transition-all outline-none`} 
+                        placeholder="••••••••" 
+                        type="password" 
+                      />
+                      {password && !passwordError && (
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-green-500 text-[20px] pointer-events-none">check_circle</span>
+                      )}
+                      {passwordError && (
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-red-500 text-[20px] pointer-events-none">error</span>
+                      )}
+                    </div>
                   </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Portal Access Level</label>
-                      <div className="flex gap-3">
-                        <button 
-                          type="button"
-                          onClick={() => setRole('patient')}
-                          className={`flex-1 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border bg-blue-50 border-blue-600 text-blue-600`}
-                        >
-                          Patient
-                        </button>
-                      </div>
-                    </div>
-                  
                   <button 
-                    disabled={loading} 
-                    className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-all flex items-center justify-center gap-3 disabled:opacity-50 mt-4" 
+                    disabled={loading || !isFormValid} 
+                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-bold text-[13px] uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/40 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none mt-6" 
                     type="submit"
                   >
-                    <span>{loading ? 'Processing...' : (isLoginMode ? 'Sign In' : 'Create Unit')}</span>
-                    <span className="material-symbols-outlined text-sm">bolt</span>
+                    <span>{loading ? 'Processing...' : (isLoginMode ? 'Sign In' : 'Create Account')}</span>
+                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                   </button>
                 </form>
               ) : (
                 <form onSubmit={otpSent ? handleVerifyOtp : handleSendOtp} className="space-y-5">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Target Email</label>
-                    <input required disabled={otpSent} value={otpEmail} onChange={e => setOtpEmail(e.target.value)} className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500/50 rounded-xl py-3.5 px-5 text-slate-900 font-medium transition-all outline-none" type="email" placeholder="name@mediai.com" />
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center ml-1">
+                      <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Target Email</label>
+                      {emailError && <span className="text-[10px] font-bold text-red-500">{emailError}</span>}
+                    </div>
+                    <div className="relative">
+                      <input 
+                        required 
+                        disabled={otpSent} 
+                        value={otpEmail} 
+                        onChange={handleOtpEmailChange} 
+                        className={`w-full bg-white/50 border ${emailError ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : otpEmail && !emailError ? 'border-green-400 focus:border-green-500 focus:ring-green-500/10' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-500/10'} focus:ring-4 rounded-2xl py-4 px-5 pr-12 text-slate-900 font-semibold transition-all outline-none`} 
+                        type="email" 
+                        placeholder="name@mediai.com" 
+                      />
+                      {otpEmail && !emailError && (
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-green-500 text-[20px] pointer-events-none">check_circle</span>
+                      )}
+                      {emailError && (
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-red-500 text-[20px] pointer-events-none">error</span>
+                      )}
+                    </div>
                   </div>
                   {otpSent && (
-                    <div className="space-y-4 pt-2">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">6-Digit Access Code</label>
-                        <input required value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500/50 rounded-xl py-4 px-6 text-slate-900 font-bold tracking-[0.5em] text-center text-xl transition-all outline-none" type="text" maxLength={6} placeholder="••••••" />
+                    <div className="space-y-5 pt-3">
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">6-Digit Access Code</label>
+                        <input required value={otpCode} onChange={e => setOtpCode(e.target.value)} className="w-full bg-white/50 border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-2xl py-5 px-6 text-slate-900 font-black tracking-[0.7em] text-center text-2xl transition-all outline-none" type="text" maxLength={6} placeholder="••••••" />
                       </div>
-                      <button type="button" onClick={() => setOtpSent(false)} className="w-full text-[9px] font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">Wrong email? Change it</button>
+                      <button type="button" onClick={() => setOtpSent(false)} className="w-full text-[10px] font-bold uppercase tracking-widest text-indigo-500 hover:text-indigo-700 transition-colors">Wrong email? Change it</button>
                     </div>
                   )}
 
                   <button 
-                    disabled={loading} 
-                    className="w-full py-4 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-all flex items-center justify-center gap-3 disabled:opacity-50" 
+                    disabled={loading || (!otpSent && !isFormValid) || (otpSent && otpCode.length !== 6)} 
+                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-500 text-white font-bold text-[13px] uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/40 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none mt-6" 
                     type="submit"
                   >
-                    <span className="material-symbols-outlined text-sm">{otpSent ? 'vpn_key' : 'send'}</span>
+                    <span className="material-symbols-outlined text-[18px]">{otpSent ? 'vpn_key' : 'send'}</span>
                     <span>{loading ? 'Processing...' : (otpSent ? 'Verify Code' : 'Request OTP')}</span>
                   </button>
                 </form>
@@ -350,48 +447,44 @@ export default function AuthPage() {
             </motion.div>
           </AnimatePresence>
 
-          {isLoginMode && (
-            <div className="mt-8">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="h-[1px] flex-1 bg-slate-200"></div>
-                <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Third Party Entry</span>
-                <div className="h-[1px] flex-1 bg-slate-200"></div>
-              </div>
-
-
-              <button 
-                onClick={handleGoogleLogin} 
-                className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl bg-white text-black font-bold text-xs transition-all hover:bg-white/90 active:scale-[0.98]"
-              >
-                <svg width="18" height="18" viewBox="0 0 18 18">
-                  <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.49h4.84c-.21 1.12-.84 2.07-1.79 2.71v2.25h2.91c1.7-1.56 2.68-3.87 2.68-6.61z"/>
-                  <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.25c-.81.54-1.85.86-3.05.86-2.34 0-4.32-1.58-5.03-3.7H.95v2.33C2.43 15.89 5.49 18 9 18z"/>
-                  <path fill="#FBBC05" d="M3.97 10.73c-.18-.54-.28-1.12-.28-1.73s.1-1.19.28-1.73V4.94H.95C.35 6.13 0 7.52 0 9s.35 2.87.95 4.06l3.02-2.33z"/>
-                  <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.47.89 11.43 0 9 0 5.49 0 2.43 2.11.95 5.14l3.02 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
-                </svg>
-                <span>Continue with Google</span>
-              </button>
-
-              <div className="mt-6 text-center">
-                <button 
-                  onClick={() => setIsOtpMode(!isOtpMode)}
-                  className="text-[9px] font-bold uppercase tracking-widest text-blue-600 hover:text-blue-700 transition-colors"
-                >
-                  {isOtpMode ? 'Return to Password Login' : 'Sign in with One-Time Password'}
-                </button>
-              </div>
-
+          <div className="mt-8">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="h-[1px] flex-1 bg-slate-200"></div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">or</span>
+              <div className="h-[1px] flex-1 bg-slate-200"></div>
             </div>
-          )}
+
+            <button 
+              onClick={handleGoogleLogin} 
+              className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-white border border-slate-200/80 text-slate-700 font-bold text-[13px] transition-all hover:bg-slate-50 hover:shadow-md hover:border-slate-300 active:scale-[0.98] shadow-sm"
+            >
+              <svg width="20" height="20" viewBox="0 0 18 18">
+                <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.49h4.84c-.21 1.12-.84 2.07-1.79 2.71v2.25h2.91c1.7-1.56 2.68-3.87 2.68-6.61z"/>
+                <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.25c-.81.54-1.85.86-3.05.86-2.34 0-4.32-1.58-5.03-3.7H.95v2.33C2.43 15.89 5.49 18 9 18z"/>
+                <path fill="#FBBC05" d="M3.97 10.73c-.18-.54-.28-1.12-.28-1.73s.1-1.19.28-1.73V4.94H.95C.35 6.13 0 7.52 0 9s.35 2.87.95 4.06l3.02-2.33z"/>
+                <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.47.89 11.43 0 9 0 5.49 0 2.43 2.11.95 5.14l3.02 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+
+            <div className="mt-8 text-center">
+              <button 
+                onClick={() => setIsOtpMode(!isOtpMode)}
+                className="text-[10px] font-bold uppercase tracking-widest text-indigo-500 hover:text-indigo-700 transition-colors"
+              >
+                {isOtpMode ? 'Return to Password Login' : 'Sign in with One-Time Password'}
+              </button>
+            </div>
+          </div>
         </div>
 
-        <footer className="mt-8 flex justify-center items-center gap-6 opacity-60">
-          <div className="flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest text-slate-400">
-            <span className="material-symbols-outlined text-[14px]">lock</span>
+        <footer className="mt-10 flex justify-center items-center gap-8 opacity-60">
+          <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+            <span className="material-symbols-outlined text-[16px]">lock</span>
             <span>End-to-End SSL</span>
           </div>
-          <div className="flex items-center gap-2 text-[8px] font-bold uppercase tracking-widest text-slate-400">
-            <span className="material-symbols-outlined text-[14px]">verified</span>
+          <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+            <span className="material-symbols-outlined text-[16px]">verified</span>
             <span>GDPR Compliant</span>
           </div>
         </footer>
