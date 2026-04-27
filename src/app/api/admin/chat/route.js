@@ -3,6 +3,8 @@ import { ChatController } from '@/controllers/chatController';
 
 const ADMIN_ASSIST_PROMPT = `
 You are the MediAI Management Assistant. Help administrators manage clinical data and insights.
+CRITICAL INSTRUCTION: You MUST detect the language of the user's input and generate your ENTIRE JSON response in that EXACT SAME language. If the user writes in Romanized Hindi (Hinglish), you should respond in Hinglish.
+
 Respond in strictly valid JSON:
 {
   "assist_message": "string (Professional management guidance)",
