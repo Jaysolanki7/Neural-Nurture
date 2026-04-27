@@ -83,10 +83,15 @@
 }
 
 @layer base {
-  body {
-    @apply bg-background text-on-background font-body;
-    letter-spacing: -0.01em;
-  }
+html {
+  font-size: 95%;
+}
+
+body {
+  @apply bg-background text-on-background font-body;
+  letter-spacing: -0.01em;
+  font-size: 0.95rem;
+}
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline;

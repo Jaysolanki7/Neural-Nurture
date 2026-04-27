@@ -110,10 +110,6 @@ export default function AdminDashboard() {
             <span className="material-symbols-outlined text-sm">arrow_back</span>
             Back
           </Link>
-          <button onClick={handleLogout} className="absolute right-10 top-10 flex items-center gap-2 text-slate-900/70 hover:text-red-300 transition-colors font-bold text-xs uppercase tracking-widest">
-            <span className="material-symbols-outlined text-sm">logout</span>
-            Sign Out
-          </button>
           
           <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-slate-900/40 mb-2 block">Central Management Console</span>
           <h1 className="text-4xl font-black tracking-tighter mb-2 text-slate-900">Clinical Control Hub</h1>
@@ -123,13 +119,13 @@ export default function AdminDashboard() {
         <div className="flex bg-slate-100 p-2">
           <button 
             onClick={() => setActiveTab('doctors')}
-            className={`flex-1 py-4 font-bold text-[10px] uppercase tracking-[0.2em] transition-all rounded-xl ${activeTab === 'doctors' ? 'bg-surface-container text-primary shadow-lg' : 'text-slate-900/30 hover:text-slate-900'}`}
+            className={`flex-1 py-4 font-bold text-[10px] uppercase tracking-[0.2em] transition-all rounded-xl ${activeTab === 'doctors' ? 'bg-white text-primary shadow-sm' : 'text-slate-900/30 hover:text-slate-900'}`}
           >
             Provision Doctor
           </button>
           <button 
             onClick={() => setActiveTab('users')}
-            className={`flex-1 py-4 font-bold text-[10px] uppercase tracking-[0.2em] transition-all rounded-xl ${activeTab === 'users' ? 'bg-surface-container text-primary shadow-lg' : 'text-slate-900/30 hover:text-slate-900'}`}
+            className={`flex-1 py-4 font-bold text-[10px] uppercase tracking-[0.2em] transition-all rounded-xl ${activeTab === 'users' ? 'bg-white text-primary shadow-sm' : 'text-slate-900/30 hover:text-slate-900'}`}
           >
             Audit Users
           </button>
@@ -141,53 +137,53 @@ export default function AdminDashboard() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-900/30 uppercase tracking-[0.2em] ml-1">Full Practitioner Name</label>
-                  <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-white/10 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-medium" placeholder="Dr. Julianne Moore" />
+                  <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-medium" placeholder="Dr. Julianne Moore" />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-900/30 uppercase tracking-[0.2em] ml-1">Clinical Specialty</label>
-                    <input type="text" required value={formData.specialty} onChange={e => setFormData({...formData, specialty: e.target.value})} className="w-full bg-slate-50 border border-white/10 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-medium" placeholder="Senior Cardiologist" />
+                    <input type="text" required value={formData.specialty} onChange={e => setFormData({...formData, specialty: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-medium" placeholder="Senior Cardiologist" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-900/30 uppercase tracking-[0.2em] ml-1">Consultation Fee</label>
-                    <input type="text" value={formData.fee} onChange={e => setFormData({...formData, fee: e.target.value})} className="w-full bg-slate-50 border border-white/10 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-medium" placeholder="₹1,200" />
+                    <input type="text" value={formData.fee} onChange={e => setFormData({...formData, fee: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-medium" placeholder="₹1,200" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-900/30 uppercase tracking-[0.2em] ml-1">Practitioner Rating (1-5)</label>
-                    <input type="text" required value={formData.rating} onChange={e => setFormData({...formData, rating: e.target.value})} className="w-full bg-slate-50 border border-white/10 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-medium" placeholder="4.9" />
+                    <input type="text" required value={formData.rating} onChange={e => setFormData({...formData, rating: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-medium" placeholder="4.9" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-900/30 uppercase tracking-[0.2em] ml-1">Clinical Availability</label>
-                    <input type="text" value={formData.availability} onChange={e => setFormData({...formData, availability: e.target.value})} className="w-full bg-slate-50 border border-white/10 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-medium" placeholder="Available Today" />
+                    <input type="text" value={formData.availability} onChange={e => setFormData({...formData, availability: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-medium" placeholder="Available Today" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-900/30 uppercase tracking-[0.2em] ml-1">Primary Clinical Address</label>
-                  <input type="text" required value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full bg-slate-50 border border-white/10 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-medium" placeholder="City General Hospital, Main Wing" />
+                  <input type="text" required value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-medium" placeholder="City General Hospital, Main Wing" />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-900/30 uppercase tracking-[0.2em] ml-1">Latitudinal Pointer</label>
-                    <input type="text" value={formData.latitude} onChange={e => setFormData({...formData, latitude: e.target.value})} className="w-full bg-slate-50 border border-white/10 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-mono" placeholder="28.6139" />
+                    <input type="text" value={formData.latitude} onChange={e => setFormData({...formData, latitude: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-mono" placeholder="28.6139" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-900/30 uppercase tracking-[0.2em] ml-1">Longitudinal Pointer</label>
-                    <input type="text" value={formData.longitude} onChange={e => setFormData({...formData, longitude: e.target.value})} className="w-full bg-slate-50 border border-white/10 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-mono" placeholder="77.2090" />
+                    <input type="text" value={formData.longitude} onChange={e => setFormData({...formData, longitude: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 outline-none focus:border-primary/50 text-slate-900 font-mono" placeholder="77.2090" />
                   </div>
                 </div>
 
-                <div className="p-6 bg-slate-50 rounded-[24px] border border-white/10">
+                <div className="p-6 bg-slate-50 rounded-[24px] border border-slate-200">
                   <p className="text-[10px] font-bold text-primary mb-4 flex items-center gap-2 uppercase tracking-widest">
                     <span className="material-symbols-outlined text-[16px]">location_searching</span>
                     Geospatial Mapping
                   </p>
-                  <div className="h-[300px] rounded-2xl overflow-hidden border border-white/10 grayscale contrast-125 opacity-80 hover:opacity-100 transition-opacity">
+                  <div className="h-[300px] rounded-2xl overflow-hidden border border-slate-200 shadow-inner">
                     <MapPicker 
                       onLocationSelect={(lat, lng) => setFormData({...formData, latitude: lat.toString(), longitude: lng.toString()})} 
                     />
@@ -195,12 +191,12 @@ export default function AdminDashboard() {
                   <p className="text-[9px] text-slate-900/30 mt-3 font-bold uppercase tracking-widest text-center">Interact with the grid to set precision coordinates.</p>
                 </div>
                 
-                <button type="submit" className="w-full py-5 bg-primary hover:bg-blue-600 text-slate-900 font-black text-xs uppercase tracking-[0.3em] rounded-2xl mt-6 shadow-2xl shadow-primary/20 transition-all">
+                <button type="submit" className="w-full py-5 bg-primary hover:bg-blue-600 text-white font-black text-xs uppercase tracking-[0.3em] rounded-2xl mt-6 shadow-2xl shadow-primary/20 transition-all">
                   Commit to Neural Database
                 </button>
                 
                 {status && (
-                  <div className={`p-4 rounded-xl mt-4 text-center font-bold text-[10px] uppercase tracking-widest ${status.includes('Error') || status.includes('Failed') ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                  <div className={`p-4 rounded-xl mt-4 text-center font-bold text-[10px] uppercase tracking-widest ${status.includes('Error') || status.includes('Failed') ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-500'}`}>
                     {status}
                   </div>
                 )}

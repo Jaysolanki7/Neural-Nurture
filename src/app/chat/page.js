@@ -70,12 +70,15 @@ export default function ChatPage() {
 
   const fetchSessions = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const isAdmin = role === 'admin' || secureStorage.getItem('user_role') === 'admin';
+    if (!user && !isAdmin) return;
+    
+    const userId = user ? user.id : '00000000-0000-0000-0000-000000000000';
 
     const { data, error } = await supabase
       .from('chat_sessions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (data) setSessions(data);
@@ -124,7 +127,10 @@ export default function ChatPage() {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const isAdmin = role === 'admin' || secureStorage.getItem('user_role') === 'admin';
+      
+      if (!user && !isAdmin) return;
+      const userId = user ? user.id : '00000000-0000-0000-0000-000000000000';
 
       let fileData = null;
       if (currentFile) {
@@ -152,7 +158,7 @@ export default function ChatPage() {
       if (!sessionId) {
         const { data: session } = await supabase
           .from('chat_sessions')
-          .insert({ user_id: user.id, title: data.predictedTitle || userMsg.substring(0, 30) })
+          .insert({ user_id: userId, title: data.predictedTitle || userMsg.substring(0, 30) })
           .select().single();
         if (session) {
           sessionId = session.id;

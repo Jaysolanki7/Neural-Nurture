@@ -19,10 +19,10 @@ export class ChatModel {
      */
     async generate(modelId, systemPrompt, userPrompt, fileData = null) {
         try {
-            const model = this.genAI.getGenerativeModel({ 
+            const model = this.genAI.getGenerativeModel({
                 model: modelId,
                 generationConfig: {
-                    temperature: 0.7,
+                    temperature: 0.5,
                     topP: 0.95,
                     topK: 40,
                     maxOutputTokens: 4096, // Increased for long summaries
@@ -34,12 +34,12 @@ export class ChatModel {
 
             let parts = [{ text: fullPrompt }];
             if (fileData) {
-              parts.push({
-                inlineData: {
-                  data: fileData.base64,
-                  mimeType: fileData.mimeType
-                }
-              });
+                parts.push({
+                    inlineData: {
+                        data: fileData.base64,
+                        mimeType: fileData.mimeType
+                    }
+                });
             }
 
             const result = await model.generateContent(parts);
@@ -53,13 +53,13 @@ export class ChatModel {
             return { success: true, text };
         } catch (error) {
             const isQuota = error.message.includes('429') || error.message.includes('quota') || error.message.includes('503');
-            
+
             if (error.message.includes('404')) {
                 console.warn(`[ChatModel] Model ${modelId} not found (404).`);
             }
 
-            return { 
-                success: false, 
+            return {
+                success: false,
                 error: error.message,
                 isQuotaError: isQuota
             };

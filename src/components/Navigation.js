@@ -78,31 +78,17 @@ export default function Navigation() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
   const getNavItems = () => {
-    const baseItems = [
-      { name: 'Home', icon: 'home', href: role === 'admin' ? '/admin/dashboard' : role === 'doctor' ? '/doctor/dashboard' : '/dashboard' },
-      { name: 'Chat', icon: 'chat_bubble', href: '/chat' },
-    ];
-
     if (role === 'admin') {
       return [
-        ...baseItems,
-        { name: 'Users', icon: 'group', href: '/admin/dashboard' },
-        { name: 'Clinics', icon: 'location_city', href: '/admin/dashboard' },
+        { name: 'Dashboard', icon: 'home', href: '/admin/dashboard' },
+        { name: 'Chat', icon: 'chat_bubble', href: '/chat' },
       ];
     }
-
-    if (role === 'doctor') {
-      return [
-        ...baseItems,
-        { name: 'Patients', icon: 'person_search', href: '/doctor/dashboard' },
-        { name: 'Schedule', icon: 'calendar_month', href: '/doctor/dashboard' },
-      ];
-    }
-
+    
     return [
-      ...baseItems,
+      { name: 'Home', icon: 'home', href: '/dashboard' },
+      { name: 'Chat', icon: 'chat_bubble', href: '/chat' },
       { name: 'Doctors', icon: 'medical_services', href: '/doctors' },
       { name: 'My File', icon: 'folder_shared', href: '/medical-file' },
       { name: 'Wellness', icon: 'self_care', href: '/wellness' },

@@ -8,6 +8,13 @@ export const metadata = {
   description: "MediAI Precision Healthcare",
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 0.9,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth">

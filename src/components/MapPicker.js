@@ -7,7 +7,7 @@ function MapController({ coords }) {
   const map = useMap();
   useEffect(() => {
     if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
-      map.flyTo([coords.lat, coords.lng], 13);
+      map.flyTo([coords.lat, coords.lng], 16);
     }
   }, [coords, map]);
   return null;
@@ -46,6 +46,18 @@ export default function MapPicker({ onLocationSelect }) {
     });
   }, []);
 
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        const { latitude, longitude } = pos.coords;
+        setCoords({ lat: latitude, lng: longitude });
+        if (onLocationSelect) onLocationSelect(latitude, longitude);
+      }, (err) => {
+        console.warn("Automatic geolocation failed or denied by user.", err);
+      });
+    }
+  }, []); // Run once on mount
+
   const handleManualEntry = (e) => {
     const val = e.target.value;
     setAddress(val);
@@ -69,7 +81,7 @@ export default function MapPicker({ onLocationSelect }) {
       <div className="h-[350px] w-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative z-0">
         <MapContainer 
           center={[coords.lat, coords.lng]} 
-          zoom={13} 
+          zoom={16} 
           scrollWheelZoom={true} 
           style={{ height: '100%', width: '100%', background: '#0a0c14' }}
         >

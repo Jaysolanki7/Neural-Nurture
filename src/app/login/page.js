@@ -108,7 +108,7 @@ export default function AuthPage() {
         // Update Zustand Store
         setUser({ name, email: otpEmail, role: userRole });
         
-        window.location.href = userRole === 'doctor' ? '/doctor/dashboard' : '/dashboard';
+        window.location.href = '/dashboard';
       }
 
     } catch (err) {
@@ -153,7 +153,7 @@ export default function AuthPage() {
           // Update Zustand Store
           setUser({ name, email: data.user.email, role: userRole });
 
-          window.location.href = userRole === 'doctor' ? '/doctor/dashboard' : '/dashboard';
+          window.location.href = '/dashboard';
         }
 
       } else {
@@ -177,7 +177,7 @@ export default function AuthPage() {
               secureStorage.setItem('session_id', data.session.access_token);
           }
           setTimeout(() => {
-            window.location.href = role === 'doctor' ? '/doctor/dashboard' : '/dashboard';
+            window.location.href = '/dashboard';
           }, 2000);
         }
       }
@@ -299,28 +299,18 @@ export default function AuthPage() {
                     <input required value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-200 focus:border-blue-600/50 rounded-xl py-3.5 px-5 text-slate-900 font-medium transition-all outline-none" placeholder="••••••••" type="password" />
                   </div>
 
-                  {!isLoginMode && (
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Portal Access Level</label>
                       <div className="flex gap-3">
                         <button 
                           type="button"
                           onClick={() => setRole('patient')}
-                          className={`flex-1 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${role === 'patient' ? 'bg-blue-50 border-blue-600 text-blue-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
+                          className={`flex-1 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border bg-blue-50 border-blue-600 text-blue-600`}
                         >
                           Patient
                         </button>
-                        <button 
-                          type="button"
-                          onClick={() => setRole('doctor')}
-                          className={`flex-1 py-3 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border ${role === 'doctor' ? 'bg-blue-50 border-blue-600 text-blue-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
-                        >
-                          Doctor
-                        </button>
                       </div>
                     </div>
-
-                  )}
                   
                   <button 
                     disabled={loading} 
