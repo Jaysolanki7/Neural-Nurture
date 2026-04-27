@@ -60,8 +60,12 @@ export default function AuthPage() {
   const handlePasswordChange = (e) => {
     const val = e.target.value;
     setPassword(val);
-    if (val.length > 0) setPasswordError(validatePasswordFormat(val));
-    else setPasswordError('');
+    if (isLoginMode) {
+      setPasswordError('');
+    } else {
+      if (val.length > 0) setPasswordError(validatePasswordFormat(val));
+      else setPasswordError('');
+    }
   };
 
   const formatPhoneNumber = (num) => {
@@ -85,11 +89,14 @@ export default function AuthPage() {
       setIsFormValid(otpEmail.length > 0 && (!otpEmail.includes('@') || !validateEmailFormat(otpEmail)));
     } else {
       const eErr = validateEmailFormat(email);
-      const pErr = validatePasswordFormat(password);
+      const pErr = isLoginMode ? (password.length > 0 ? '' : 'Password required') : validatePasswordFormat(password);
+      
       if (isLoginMode) {
         setIsFormValid(!eErr && !pErr);
+        setPasswordError('');
       } else {
         setIsFormValid(!eErr && !pErr && firstName.trim().length > 0 && lastName.trim().length > 0 && phone.trim().length > 0);
+        if (password.length > 0) setPasswordError(validatePasswordFormat(password));
       }
     }
   }, [email, password, firstName, lastName, phone, isLoginMode, isOtpMode, otpEmail]);
