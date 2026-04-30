@@ -33,14 +33,13 @@ export async function GET(request) {
     )
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      const baseUrl = getURL()
-      return NextResponse.redirect(`${baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl}${next}`)
+      const origin = new URL(request.url).origin
+      return NextResponse.redirect(`${origin}${next}`)
     } else {
       console.error("Auth Callback Error:", error.message)
     }
   }
 
-  // return the user to an error page with instructions
-  const baseUrl = getURL()
-  return NextResponse.redirect(`${baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl}/login?error=auth-callback-failed`)
+  const origin = new URL(request.url).origin
+  return NextResponse.redirect(`${origin}/login?error=auth-callback-failed`)
 }

@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase';
 import { toast } from 'react-hot-toast';
 import { secureStorage } from '../../lib/storage';
 import { motion, AnimatePresence } from 'framer-motion';
+import { calculateBMI, getBMICategory } from '../../lib/utils';
 
 export default function ProfilePage() {
     const [mounted, setMounted] = useState(false);
@@ -22,6 +23,8 @@ export default function ProfilePage() {
     const [emergencyContact, setEmergencyContact] = useState('');
     const [age, setAge] = useState('');
     const [gender, setGender] = useState('');
+    const [height, setHeight] = useState('');
+    const [weight, setWeight] = useState('');
     const [profilePic, setProfilePic] = useState('');
     
     // Doctor Fields
@@ -37,6 +40,9 @@ export default function ProfilePage() {
     const [isUploading, setIsUploading] = useState(false);
     const router = useRouter();
     const fileInputRef = useRef(null);
+
+    const currentBMI = calculateBMI(weight, height);
+    const bmiInfo = getBMICategory(currentBMI);
 
     useEffect(() => {
         setMounted(true);
@@ -132,6 +138,8 @@ export default function ProfilePage() {
                 setEmergencyContact(data.emergency_contact || '');
                 setAge(data.age?.toString() || '');
                 setGender(data.gender || '');
+                setHeight(data.height?.toString() || '');
+                setWeight(data.weight?.toString() || '');
                 setProfilePic(data.avatar_url || '');
             }
         }
@@ -190,6 +198,8 @@ export default function ProfilePage() {
                 toast.success('Professional Profile Updated');
             } else {
                 const parsedAge = age ? parseInt(age) : null;
+                const parsedHeight = height ? parseFloat(height) : null;
+                const parsedWeight = weight ? parseFloat(weight) : null;
                 
                 // Prepare profile data
                 const profileData = {
@@ -201,6 +211,8 @@ export default function ProfilePage() {
                     emergency_contact: emergencyContact,
                     age: parsedAge,
                     gender: gender,
+                    height: parsedHeight,
+                    weight: parsedWeight,
                     avatar_url: profilePic,
                     updated_at: new Date(),
                 };
@@ -212,7 +224,7 @@ export default function ProfilePage() {
 
                 if (error) {
                     console.warn("Schema mismatch detected, falling back to basic profile sync...");
-                    const { age: ageCol, gender: genderCol, ...basicData } = profileData;
+                    const { age: ageCol, gender: genderCol, height: hCol, weight: wCol, ...basicData } = profileData;
                     const { error: retryError } = await supabase
                         .from('profiles')
                         .upsert(basicData);
@@ -220,7 +232,7 @@ export default function ProfilePage() {
                     if (retryError) throw retryError;
                     
                     secureStorage.setItem('user_name', name);
-                    toast.error('Age/Gender not saved: Columns missing in Database.');
+                    toast.error('Extended metrics not saved: Columns missing in Database.');
                 } else {
                     secureStorage.setItem('user_name', name);
                     toast.success('Profile Synced Successfully');
@@ -300,6 +312,17 @@ export default function ProfilePage() {
                             <h2 className="text-3xl font-black text-slate-950 tracking-tighter mb-2">{name}</h2>
                             <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-8">{email}</p>
                             
+                            {/* BMI Visualization */}
+                            {currentBMI && (
+                                <div className="w-full p-6 bg-slate-50 rounded-3xl mb-8 border border-slate-100">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Body Mass Index</p>
+                                    <div className="flex items-end gap-3">
+                                        <span className="text-5xl font-black text-slate-950 tracking-tighter">{currentBMI}</span>
+                                        <span className={`text-[10px] font-black uppercase mb-2 ${bmiInfo.color}`}>{bmiInfo.label}</span>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="w-full pt-8 border-t border-slate-50 space-y-4">
                                 <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
                                     <span>Cloud Capacity</span>
@@ -375,6 +398,24 @@ export default function ProfilePage() {
                                             </select>
                                         </div>
                                     </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8 bg-blue-50/50 rounded-[2.5rem] border border-blue-100/50">
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600 ml-1">Height (cm)</label>
+                                            <input value={height} onChange={e => setHeight(e.target.value)} className="w-full bg-white border-2 border-transparent focus:border-blue-200 rounded-2xl py-5 px-6 text-slate-950 font-black outline-none transition-all shadow-sm" type="number" placeholder="175" />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600 ml-1">Weight (kg)</label>
+                                            <input value={weight} onChange={e => setWeight(e.target.value)} className="w-full bg-white border-2 border-transparent focus:border-blue-200 rounded-2xl py-5 px-6 text-slate-950 font-black outline-none transition-all shadow-sm" type="number" placeholder="70" />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600 ml-1">Calculated BMI</label>
+                                            <div className="w-full bg-white border-2 border-slate-100 rounded-2xl py-5 px-6 text-blue-600 font-black shadow-sm flex items-center justify-between">
+                                                <span>{currentBMI || '--'}</span>
+                                                <span className={`text-[8px] px-2 py-1 rounded-md bg-blue-50 ${bmiInfo?.color || 'text-slate-400'}`}>{bmiInfo?.label || 'N/A'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                     
                                     <div className="space-y-3">
                                         <label className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-600 ml-1">Emergency Contact</label>
@@ -403,18 +444,22 @@ export default function ProfilePage() {
                                     exit={{ opacity: 0, y: -20 }}
                                     className="space-y-12"
                                 >
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
                                         <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
                                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Blood Node</p>
-                                            <p className="text-4xl font-black text-slate-950 tracking-tighter">{bloodType || 'N/A'}</p>
+                                            <p className="text-2xl md:text-4xl font-black text-slate-950 tracking-tighter">{bloodType || 'N/A'}</p>
                                         </div>
                                         <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
                                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Age</p>
-                                            <p className="text-4xl font-black text-slate-950 tracking-tighter">{age || 'N/A'}</p>
+                                            <p className="text-2xl md:text-4xl font-black text-slate-950 tracking-tighter">{age || 'N/A'}</p>
                                         </div>
                                         <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Gender</p>
-                                            <p className="text-4xl font-black text-slate-950 tracking-tighter">{gender || 'N/A'}</p>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Height</p>
+                                            <p className="text-2xl md:text-4xl font-black text-slate-950 tracking-tighter">{height || 'N/A'}<span className="text-xs ml-1">cm</span></p>
+                                        </div>
+                                        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Weight</p>
+                                            <p className="text-2xl md:text-4xl font-black text-slate-950 tracking-tighter">{weight || 'N/A'}<span className="text-xs ml-1">kg</span></p>
                                         </div>
                                     </div>
 

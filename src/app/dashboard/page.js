@@ -3,11 +3,14 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import { useStore } from '../../lib/store';
+import { calculateBMI, getBMICategory } from '../../lib/utils';
 
 export default function DashboardPage() {
   const [userName, setUserName] = useState('User');
   const [metrics, setMetrics] = useState({
-    bmi: '22.4',
+    bmi: null,
+    bmiLabel: 'Neural Link Pending',
+    bmiColor: 'text-slate-400',
     heartRate: '72',
     steps: '8,432',
     calories: 0,
@@ -51,11 +54,16 @@ export default function DashboardPage() {
         if (profile) {
           if (profile.full_name) setUserName(profile.full_name);
           
-          const weight = parseFloat(profile.weight);
-          const height = parseFloat(profile.height) / 100; // cm to m
-          if (weight && height) {
-            const bmiValue = (weight / (height * height)).toFixed(1);
-            setMetrics(prev => ({ ...prev, bmi: bmiValue }));
+          const bmiValue = calculateBMI(profile.weight, profile.height);
+          const bmiInfo = getBMICategory(bmiValue);
+          
+          if (bmiValue) {
+            setMetrics(prev => ({ 
+              ...prev, 
+              bmi: bmiValue,
+              bmiLabel: bmiInfo?.label || 'Healthy Range',
+              bmiColor: bmiInfo?.color || 'text-emerald-600'
+            }));
           }
         }
 
@@ -154,10 +162,10 @@ export default function DashboardPage() {
             </div>
             <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">Body Mass Index</span>
             <div className="mt-10">
-              <span className="text-6xl font-extrabold text-primary tracking-tighter">{metrics.bmi}</span>
-              <div className="mt-6 flex items-center gap-2 text-emerald-600 font-bold">
-                <span className="material-symbols-outlined text-sm">check_circle</span>
-                <span className="text-[10px] uppercase tracking-widest">{parseFloat(metrics.bmi) < 25 ? 'Healthy Range' : 'Attention Needed'}</span>
+              <span className="text-6xl font-extrabold text-primary tracking-tighter">{metrics.bmi || '--'}</span>
+              <div className={`mt-6 flex items-center gap-2 font-bold ${metrics.bmiColor}`}>
+                <span className="material-symbols-outlined text-sm">{metrics.bmi ? 'check_circle' : 'pending'}</span>
+                <span className="text-[10px] uppercase tracking-widest">{metrics.bmiLabel}</span>
               </div>
             </div>
           </div>
@@ -267,6 +275,43 @@ export default function DashboardPage() {
                   <span className="material-symbols-outlined text-xl">videocam</span>
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Quick BMI Calculator Widget */}
+          <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-lg space-y-6">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-primary">calculate</span>
+              <h4 className="font-bold text-slate-900 uppercase text-[10px] tracking-[0.3em]">BMI Quick Check</h4>
+            </div>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input 
+                  type="number" 
+                  placeholder="H (cm)" 
+                  id="quick-h"
+                  className="w-1/2 bg-slate-50 border-none rounded-xl p-3 text-xs font-bold outline-none focus:ring-2 ring-primary/20" 
+                />
+                <input 
+                  type="number" 
+                  placeholder="W (kg)" 
+                  id="quick-w"
+                  className="w-1/2 bg-slate-50 border-none rounded-xl p-3 text-xs font-bold outline-none focus:ring-2 ring-primary/20" 
+                />
+              </div>
+              <button 
+                onClick={() => {
+                  const h = document.getElementById('quick-h').value;
+                  const w = document.getElementById('quick-w').value;
+                  if(h && w) {
+                    const bmi = (w / ((h/100) * (h/100))).toFixed(1);
+                    alert(`Calculated BMI: ${bmi}`);
+                  }
+                }}
+                className="w-full py-3 bg-primary text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:scale-[1.02] transition-all shadow-md shadow-primary/20"
+              >
+                Calculate Now
+              </button>
             </div>
           </div>
 
