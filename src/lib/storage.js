@@ -1,43 +1,65 @@
 "use client";
 
-// A simple utility for obfuscating data in localStorage
-const SECRET_SALT = "MediAI_Precision_2026";
+// All user data stored under a single 'mediai_user' key in localStorage
+// Structure: { name, email, role, session_id }
+
+const STORAGE_KEY = "mediai_user";
+
+const getStore = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveStore = (data) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+};
+
+// Key mapping: old keys → new flat keys inside mediai_user object
+const keyMap = {
+  user_name: "name",
+  user_email: "email",
+  user_role: "role",
+  session_id: "session_id",
+};
 
 export const secureStorage = {
   setItem: (key, value) => {
-    if (typeof window === 'undefined') return;
-    try {
-      const stringValue = JSON.stringify(value);
-      // Basic obfuscation using Base64
-      const encodedValue = btoa(unescape(encodeURIComponent(stringValue + SECRET_SALT)));
-      localStorage.setItem(key, encodedValue);
-    } catch (e) {
-      console.error("Storage error:", e);
-    }
+    if (typeof window === "undefined") return;
+    const store = getStore();
+    const mappedKey = keyMap[key] || key;
+    store[mappedKey] = value;
+    saveStore(store);
   },
 
   getItem: (key) => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const encodedValue = localStorage.getItem(key);
-      if (!encodedValue) return null;
-      const decodedValue = decodeURIComponent(escape(atob(encodedValue)));
-      if (decodedValue.endsWith(SECRET_SALT)) {
-        return JSON.parse(decodedValue.replace(SECRET_SALT, ""));
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
+    if (typeof window === "undefined") return null;
+    const store = getStore();
+    const mappedKey = keyMap[key] || key;
+    return store[mappedKey] ?? null;
   },
 
   removeItem: (key) => {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem(key);
+    if (typeof window === "undefined") return;
+    const store = getStore();
+    const mappedKey = keyMap[key] || key;
+    delete store[mappedKey];
+    saveStore(store);
   },
 
   clear: () => {
-    if (typeof window === 'undefined') return;
-    localStorage.clear();
-  }
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(STORAGE_KEY);
+  },
 };
+
+// Direct helpers — use anywhere to read values from mediai_user
+export const getMediAIUser = () => getStore();
+export const getMediAIName = () => getStore().name || null;
+export const getMediAIEmail = () => getStore().email || null;
+export const getMediAIRole = () => getStore().role || "patient";

@@ -208,27 +208,53 @@ export default function WellnessPage() {
     }
   };
 
-  const updateLog = async (updates) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const dateStr = selectedDate.toISOString().split('T')[0];
+  const updateWater = (amount) => {
+    setDailyLog(prev => {
+      const current = prev?.water_intake || 0;
+      const newWater = Math.max(0, current + amount);
+      
+      // Fire API async
+      (async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          const dateStr = selectedDate.toISOString().split('T')[0];
+          
+          const { data: existing, error: fetchError } = await supabase
+            .from('wellness_logs')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('log_date', dateStr)
+            .maybeSingle();
 
-      const { error } = await supabase
-        .from('wellness_logs')
-        .upsert({
-          user_id: user.id,
-          log_date: dateStr,
-          ...dailyLog,
-          ...updates
-        });
+          if (fetchError) throw fetchError;
 
-      if (!error) {
-        setDailyLog(prev => ({ ...prev, ...updates }));
-        toast.success('Log updated');
-      }
-    } catch (error) {
-      toast.error('Failed to update log');
-    }
+          let opError;
+          if (existing) {
+            const { error } = await supabase.from('wellness_logs')
+              .update({ water_intake: newWater })
+              .eq('id', existing.id);
+            opError = error;
+          } else {
+            const { error } = await supabase.from('wellness_logs')
+              .insert({
+                user_id: user.id,
+                log_date: dateStr,
+                water_intake: newWater,
+                mindfulness_minutes: prev?.mindfulness_minutes || 0,
+                daily_score: prev?.daily_score || 0
+              });
+            opError = error;
+          }
+          if (opError) throw opError;
+        } catch (error) {
+          console.error("Water API Error:", error);
+          toast.error('Failed to update water');
+        }
+      })();
+
+      return { ...prev, water_intake: newWater };
+    });
   };
 
   const calculateTotals = () => {
@@ -262,14 +288,14 @@ export default function WellnessPage() {
   return (
     <main className="pt-24 pb-8 px-4 md:px-8 max-w-7xl mx-auto font-body">
       {/* Hero Section */}
-      <section className="mb-12 relative overflow-hidden rounded-[3rem] p-8 md:p-14 bg-slate-950 text-white shadow-2xl border border-white/10">
+      <section className="mb-12 relative overflow-hidden rounded-[2rem] md:rounded-[3rem] p-5 sm:p-8 md:p-14 bg-slate-950 text-white shadow-2xl border border-white/10">
         <div className="absolute top-0 right-0 w-full h-full opacity-20 pointer-events-none">
           <div className="absolute top-10 right-10 w-96 h-96 bg-blue-600 rounded-full blur-[120px]"></div>
           <div className="absolute bottom-10 left-10 w-64 h-64 bg-indigo-600 rounded-full blur-[120px]"></div>
         </div>
 
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-12">
-          <div className="max-w-2xl space-y-8">
+        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-center gap-8 lg:gap-12">
+          <div className="max-w-2xl space-y-6 lg:space-y-8 w-full">
             <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 backdrop-blur-xl">
               <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
               <span className="text-[10px] font-black tracking-[0.4em] uppercase text-blue-400">Metabolic Intelligence</span>
@@ -290,23 +316,23 @@ export default function WellnessPage() {
           </div>
           
           {/* Daily Macros Display */}
-          <div className="w-full md:w-auto flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-4">
-               <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 text-center min-w-[180px]">
-                  <p className="text-[9px] font-black text-blue-400 uppercase tracking-[0.4em] mb-3">Calories</p>
-                  <p className="text-5xl font-black">{totals.calories}</p>
+          <div className="w-full lg:w-auto flex flex-col gap-4 flex-shrink-0 lg:min-w-[400px]">
+            <div className="grid grid-cols-2 gap-3 md:gap-4 w-full">
+               <div className="bg-white/5 backdrop-blur-xl p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-white/10 text-center w-full">
+                  <p className="text-[8px] md:text-[9px] font-black text-blue-400 uppercase tracking-[0.2em] md:tracking-[0.4em] mb-1 md:mb-3">Calories</p>
+                  <p className="text-3xl md:text-5xl font-black">{totals.calories}</p>
                </div>
-               <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 text-center min-w-[180px]">
-                  <p className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.4em] mb-3">Protein</p>
-                  <p className="text-5xl font-black">{totals.protein}g</p>
+               <div className="bg-white/5 backdrop-blur-xl p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-white/10 text-center w-full">
+                  <p className="text-[8px] md:text-[9px] font-black text-emerald-400 uppercase tracking-[0.2em] md:tracking-[0.4em] mb-1 md:mb-3">Protein</p>
+                  <p className="text-3xl md:text-5xl font-black">{totals.protein}g</p>
                </div>
-               <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 text-center min-w-[180px]">
-                  <p className="text-[9px] font-black text-amber-400 uppercase tracking-[0.4em] mb-3">Carbs</p>
-                  <p className="text-5xl font-black">{totals.carbs}g</p>
+               <div className="bg-white/5 backdrop-blur-xl p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-white/10 text-center w-full">
+                  <p className="text-[8px] md:text-[9px] font-black text-amber-400 uppercase tracking-[0.2em] md:tracking-[0.4em] mb-1 md:mb-3">Carbs</p>
+                  <p className="text-3xl md:text-5xl font-black">{totals.carbs}g</p>
                </div>
-               <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 text-center min-w-[180px]">
-                  <p className="text-[9px] font-black text-pink-400 uppercase tracking-[0.4em] mb-3">Fats</p>
-                  <p className="text-5xl font-black">{totals.fats}g</p>
+               <div className="bg-white/5 backdrop-blur-xl p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-white/10 text-center w-full">
+                  <p className="text-[8px] md:text-[9px] font-black text-pink-400 uppercase tracking-[0.2em] md:tracking-[0.4em] mb-1 md:mb-3">Fats</p>
+                  <p className="text-3xl md:text-5xl font-black">{totals.fats}g</p>
                </div>
             </div>
           </div>
@@ -315,7 +341,7 @@ export default function WellnessPage() {
 
       {/* Calendar Strip */}
       <section className="mb-12">
-        <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-6 px-2">
+        <div className="flex items-center gap-3 md:gap-6 overflow-x-auto no-scrollbar pb-6 px-2">
           {getDaysInMonth().map((date, i) => {
             const isSelected = date.toDateString() === selectedDate.toDateString();
             const isToday = date.toDateString() === new Date().toDateString();
@@ -323,10 +349,10 @@ export default function WellnessPage() {
               <button
                 key={i}
                 onClick={() => setSelectedDate(date)}
-                className={`min-w-[120px] p-6 rounded-[2.5rem] border transition-all flex flex-col items-center gap-2 group ${isSelected ? 'bg-slate-950 border-slate-950 text-white shadow-2xl scale-110 z-10' : 'bg-white border-slate-100 text-slate-400 hover:bg-slate-50'}`}
+                className={`min-w-[80px] md:min-w-[120px] p-4 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border transition-all flex flex-col items-center gap-1 md:gap-2 group ${isSelected ? 'bg-slate-950 border-slate-950 text-white shadow-2xl scale-110 z-10' : 'bg-white border-slate-100 text-slate-400 hover:bg-slate-50'}`}
               >
-                <span className="text-[9px] font-black uppercase tracking-[0.3em]">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                <span className="text-3xl font-black tracking-tighter">{date.getDate()}</span>
+                <span className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em]">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                <span className="text-2xl md:text-3xl font-black tracking-tighter">{date.getDate()}</span>
                 {isToday && !isSelected && <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>}
               </button>
             );
@@ -433,13 +459,13 @@ export default function WellnessPage() {
                     </div>
                     <div className="flex gap-2">
                       <button 
-                        onClick={() => updateLog({ water_intake: Math.max(0, (dailyLog?.water_intake || 0) - 0.25) })}
+                        onClick={() => updateWater(-0.25)}
                         className="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-400 font-black text-[10px] uppercase tracking-[0.3em] hover:bg-red-50 hover:text-red-500 transition-all flex items-center justify-center"
                       >
                         <span className="material-symbols-outlined text-sm">remove</span>
                       </button>
                       <button 
-                        onClick={() => updateLog({ water_intake: (dailyLog?.water_intake || 0) + 0.25 })} 
+                        onClick={() => updateWater(0.25)} 
                         className="flex-[3] py-4 rounded-2xl bg-blue-50 text-blue-600 font-black text-[10px] uppercase tracking-[0.3em] hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2"
                       >
                         <span className="material-symbols-outlined text-sm">add</span>
@@ -462,21 +488,6 @@ export default function WellnessPage() {
                       ></motion.div>
                     </div>
                  </div>
-
-                 {/* Vitamins */}
-                 <button 
-                  onClick={() => updateLog({ vitamin_taken: !dailyLog?.vitamin_taken })}
-                  className={`w-full p-8 rounded-[2.5rem] border-2 transition-all flex items-center justify-between ${dailyLog?.vitamin_taken ? 'bg-emerald-50 border-emerald-500' : 'bg-white border-slate-100'}`}
-                 >
-                    <div className="flex items-center gap-6">
-                      <span className={`material-symbols-outlined text-4xl ${dailyLog?.vitamin_taken ? 'text-emerald-600' : 'text-slate-200'}`}>medication</span>
-                      <div className="text-left">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Supplement Stack</p>
-                        <p className="text-lg font-black text-slate-950">{dailyLog?.vitamin_taken ? 'Protocol Active' : 'Stack Pending'}</p>
-                      </div>
-                    </div>
-                    {dailyLog?.vitamin_taken && <span className="material-symbols-outlined text-emerald-600">verified</span>}
-                 </button>
               </div>
            </div>
 
@@ -532,13 +543,13 @@ export default function WellnessPage() {
                     </div>
                     <div className="space-y-8">
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-                          <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Calories</p>
-                          <p className="text-4xl font-black text-slate-950">{scanResult.calories}</p>
+                        <div className="bg-white p-4 md:p-8 rounded-2xl md:rounded-3xl border border-slate-100 shadow-sm">
+                          <p className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase mb-1 md:mb-2">Calories</p>
+                          <p className="text-3xl md:text-4xl font-black text-slate-950">{scanResult.calories}</p>
                         </div>
-                        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-                          <p className="text-[9px] font-black text-slate-400 uppercase mb-2">Protein</p>
-                          <p className="text-4xl font-black text-blue-600">{scanResult.protein}</p>
+                        <div className="bg-white p-4 md:p-8 rounded-2xl md:rounded-3xl border border-slate-100 shadow-sm">
+                          <p className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase mb-1 md:mb-2">Protein</p>
+                          <p className="text-3xl md:text-4xl font-black text-blue-600">{scanResult.protein}</p>
                         </div>
                       </div>
                       <div className="p-10 bg-emerald-50 rounded-[2.5rem] border border-emerald-100">

@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useRouter } from 'next/navigation';
 import { secureStorage } from '../../lib/storage';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 export default function ChatPage() {
   const [messages, setMessages] = useState([]);
@@ -13,9 +14,10 @@ export default function ChatPage() {
   const [triage, setTriage] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [role, setRole] = useState('patient');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
   const router = useRouter();
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -28,6 +30,11 @@ export default function ChatPage() {
         return;
       }
       setSelectedFile(file);
+      if (file.type.startsWith('image/')) {
+        setFilePreview(URL.createObjectURL(file));
+      } else {
+        setFilePreview(null);
+      }
     }
   };
 
@@ -84,6 +91,27 @@ export default function ChatPage() {
     if (data) setSessions(data);
   };
 
+  const deleteSession = async (sessionId, e) => {
+    e.stopPropagation();
+    try {
+      await supabase.from('chat_messages').delete().eq('session_id', sessionId);
+      await supabase.from('chat_sessions').delete().eq('id', sessionId);
+      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      if (currentSessionId === sessionId) {
+        setCurrentSessionId(null);
+        setMessages([{ 
+          role: 'assistant', 
+          text: role === 'doctor' 
+            ? `Neural Clinical Assistant Online. Submit patient symptoms or laboratory parameters for rapid diagnostic synthesis and management protocols.`
+            : `Hello, I am MediAI. Please describe your symptoms or clinical requirements for analysis.` 
+        }]);
+        setTriage(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+    }
+  };
+
   const fetchMessages = async (sessionId) => {
     const { data, error } = await supabase
       .from('chat_messages')
@@ -95,14 +123,19 @@ export default function ChatPage() {
       let lastTriage = null;
       const parsedMessages = data.map(m => {
         let text = m.content;
-        if (text && text.includes('||TRIAGE_DATA||')) {
+        let fileName = null;
+        if (m.role === 'user' && text && text.includes('||FILE||')) {
+          const parts = text.split('||FILE||');
+          text = parts[0];
+          fileName = parts[1];
+        } else if (text && text.includes('||TRIAGE_DATA||')) {
           const parts = text.split('||TRIAGE_DATA||');
           text = parts[0];
           try {
             lastTriage = JSON.parse(parts[1]);
           } catch(e) {}
         }
-        return { role: m.role, text };
+        return { role: m.role, text, fileName };
       });
       setMessages(parsedMessages);
       setTriage(lastTriage);
@@ -115,13 +148,16 @@ export default function ChatPage() {
 
     const userMsg = input || (selectedFile ? `Analyze attached report: ${selectedFile.name}` : "");
     const currentFile = selectedFile;
+    const previewUrl = currentFile && currentFile.type.startsWith('image/') ? URL.createObjectURL(currentFile) : null;
     
     setInput('');
     setSelectedFile(null);
+    setFilePreview(null);
     setMessages(prev => [...prev, { 
       role: 'user', 
       text: userMsg,
-      fileName: currentFile?.name
+      fileName: currentFile?.name,
+      filePreviewUrl: previewUrl
     }]);
     setLoading(true);
 
@@ -168,7 +204,11 @@ export default function ChatPage() {
       }
 
       if (sessionId) {
-        await supabase.from('chat_messages').insert({ session_id: sessionId, role: 'user', content: userMsg });
+        let saveMsg = userMsg;
+        if (currentFile) {
+          saveMsg = `${userMsg}||FILE||${currentFile.name}`;
+        }
+        await supabase.from('chat_messages').insert({ session_id: sessionId, role: 'user', content: saveMsg });
         if (data.reply) {
           setMessages(prev => [...prev, { role: 'assistant', text: data.reply }]);
           let contentToSave = data.reply + (data.triage ? `||TRIAGE_DATA||${JSON.stringify(data.triage)}` : '');
@@ -193,17 +233,22 @@ export default function ChatPage() {
             <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Analysis History</h2>
             <button onClick={() => setIsSidebarOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-400"><span className="material-symbols-outlined text-[18px]">keyboard_double_arrow_left</span></button>
           </div>
-          <button onClick={() => { setCurrentSessionId(null); setMessages([]); }} className="w-full py-4 px-6 bg-blue-600 text-white rounded-2xl flex items-center justify-center gap-3 hover:bg-blue-700 transition-all font-black shadow-lg shadow-blue-600/20">
+          <button onClick={() => { setCurrentSessionId(null); setMessages([]); setIsSidebarOpen(false); }} className="w-full py-4 px-6 bg-blue-600 text-white rounded-2xl flex items-center justify-center gap-3 hover:bg-blue-700 transition-all font-black shadow-lg shadow-blue-600/20">
             <span className="material-symbols-outlined text-sm">add</span>
-            <span className="text-[10px] uppercase tracking-[0.2em]">New Protocol</span>
+            <span className="text-[10px] uppercase tracking-[0.2em]">New Chat</span>
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-4 space-y-2 custom-scrollbar">
           {sessions.map(session => (
-            <button key={session.id} onClick={() => setCurrentSessionId(session.id)} className={`w-full text-left p-4 rounded-xl flex items-center gap-3 transition-all ${currentSessionId === session.id ? 'bg-blue-600/10 text-blue-600 border border-blue-600/20' : 'hover:bg-slate-200/50 text-slate-600'}`}>
-              <span className="material-symbols-outlined text-[18px]">clinical_notes</span>
-              <span className="text-xs font-bold truncate flex-1">{session.title}</span>
-            </button>
+            <div key={session.id} className="relative group flex items-center">
+              <button onClick={() => { setCurrentSessionId(session.id); setIsSidebarOpen(false); }} className={`flex-1 text-left p-4 pr-12 rounded-xl flex items-center gap-3 transition-all ${currentSessionId === session.id ? 'bg-blue-600/10 text-blue-600 border border-blue-600/20' : 'hover:bg-slate-200/50 text-slate-600'}`}>
+                <span className="material-symbols-outlined text-[18px]">clinical_notes</span>
+                <span className="text-xs font-bold truncate">{session.title}</span>
+              </button>
+              <button onClick={(e) => deleteSession(session.id, e)} className="absolute right-3 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all">
+                <span className="material-symbols-outlined text-[16px]">delete</span>
+              </button>
+            </div>
           ))}
         </div>
       </aside>
@@ -213,7 +258,7 @@ export default function ChatPage() {
         <div className="px-6 md:px-8 py-6 bg-white/80 backdrop-blur-xl flex items-center justify-between z-10 border-b border-slate-100">
           <div className="flex items-center gap-4">
             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className={`${isSidebarOpen ? 'md:hidden' : 'flex'} w-10 h-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 transition-all`}>
-              <span className="material-symbols-outlined">{isSidebarOpen ? 'close' : 'history'}</span>
+              <span className="material-symbols-outlined">{isSidebarOpen ? 'close' : 'keyboard_double_arrow_right'}</span>
             </button>
             <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/20">
               <span className="material-symbols-outlined">smart_toy</span>
@@ -250,6 +295,11 @@ export default function ChatPage() {
                 </div>
               </div>
               <div className={`p-8 rounded-[2.5rem] shadow-[0_10px_40px_rgba(0,0,0,0.03)] border transition-all ${msg.role === 'user' ? 'bg-slate-900 text-white border-slate-800 rounded-tr-none' : 'bg-white text-slate-800 border-slate-100 rounded-tl-none'}`}>
+                {msg.filePreviewUrl && (
+                  <div className="mb-4 rounded-2xl overflow-hidden border border-white/10">
+                    <img src={msg.filePreviewUrl} alt="Upload" className="max-w-full h-auto max-h-64 object-contain rounded-2xl" />
+                  </div>
+                )}
                 {msg.fileName && (
                   <div className="flex items-center gap-3 mb-4 p-3 bg-white/10 rounded-2xl border border-white/5">
                     <span className="material-symbols-outlined text-blue-400">description</span>
@@ -345,9 +395,15 @@ export default function ChatPage() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="flex items-center gap-4 bg-slate-900 text-white p-4 rounded-3xl border border-slate-800 shadow-2xl ml-4 mr-20"
                 >
-                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-                    <span className="material-symbols-outlined text-sm">attach_file</span>
-                  </div>
+                  {filePreview ? (
+                    <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
+                      <img src={filePreview} className="w-full h-full object-cover" alt="Preview" />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-sm">attach_file</span>
+                    </div>
+                  )}
                   <div className="flex-1 overflow-hidden">
                     <p className="text-[10px] font-black uppercase tracking-widest truncate">{selectedFile.name}</p>
                     <p className="text-[8px] text-slate-500 font-bold">READY FOR CLINICAL ANALYSIS</p>

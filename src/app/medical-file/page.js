@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function MedicalFilePage() {
+  const [mounted, setMounted] = useState(false);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [storageUsage, setStorageUsage] = useState(0);
@@ -221,7 +222,7 @@ export default function MedicalFilePage() {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
         </div>
 
-        <div className="max-w-[1500px] mx-auto relative z-10 flex flex-col md:flex-row items-center gap-12 h-full">
+        <div className="max-w-[1500px] mx-auto relative z-30 flex flex-col md:flex-row items-center gap-12 h-full">
           <div className="flex-1 space-y-8">
             <motion.div 
               initial={{ opacity: 0, scale: 0.8 }}
@@ -311,7 +312,7 @@ export default function MedicalFilePage() {
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`px-8 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeCategory === cat ? 'bg-slate-950 text-white shadow-2xl scale-105' : 'bg-white text-slate-400 hover:bg-slate-50 border border-slate-100'}`}
+                  className={`px-8 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeCategory === cat ? 'bg-slate-950 text-white shadow-2xl scale-105' : 'bg-white text-black hover:bg-slate-50 border border-slate-100'}`}
                 >
                   {cat}
                 </button>

@@ -121,30 +121,34 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <main className="pt-24 pb-24 px-6 max-w-7xl mx-auto space-y-12 min-h-screen">
+    <main className="pt-20 pb-24 px-4 sm:px-6 max-w-7xl mx-auto space-y-8 md:space-y-12 min-h-screen">
       {/* Hero Section */}
       <section className="relative">
-        <div className="flex flex-col md:flex-row justify-between items-end gap-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="space-y-3">
             <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Patient Intelligence Node</span>
-            <h1 className="text-5xl md:text-6xl font-extrabold tracking-tighter text-slate-900">Welcome back, {userName}</h1>
-            <p className="text-slate-900/80 max-w-md text-lg font-medium leading-relaxed">Your clinical data is ready for review. Monitor your vital signs and recent diagnostics below.</p>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tighter text-slate-900 leading-tight">
+              Welcome back,<br className="sm:hidden" /> {userName}
+            </h1>
+            <p className="text-slate-900/80 max-w-md text-sm md:text-base lg:text-lg font-medium leading-relaxed">Your clinical data is ready for review. Monitor your vital signs and recent diagnostics below.</p>
           </div>
-          <Link href="/chat">
-            <button className="neural-gradient text-on-primary px-10 py-5 rounded-full font-bold flex items-center gap-3 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
-              <span className="text-lg">AI Triage Assistant</span>
-            </button>
-          </Link>
+          <div className="shrink-0">
+            <Link href="/chat">
+              <button className="neural-gradient text-on-primary px-7 py-4 rounded-full font-bold flex items-center gap-3 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20 w-full md:w-auto justify-center whitespace-nowrap">
+                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
+                <span className="text-sm md:text-base">AI Triage Assistant</span>
+              </button>
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Bento Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         {/* Health Metrics Column */}
-        <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-8">
+        <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-8">
           {/* BMI Metric */}
-          <div className="bg-white p-8 rounded-3xl relative overflow-hidden group border border-slate-200 hover:bg-slate-50 shadow-md transition-all">
+          <div className="bg-white p-6 md:p-8 rounded-3xl relative overflow-hidden group border border-slate-200 hover:bg-slate-50 shadow-md transition-all">
             <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
               <span className="material-symbols-outlined text-9xl">fitness_center</span>
             </div>
@@ -158,8 +162,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Calories Metric (Replacing Heart Rate for real data availability) */}
-          <div className="bg-white p-8 rounded-3xl relative overflow-hidden group border border-slate-200 hover:bg-slate-50 shadow-md transition-all">
+          {/* Calories Metric */}
+          <div className="bg-white p-6 md:p-8 rounded-3xl relative overflow-hidden group border border-slate-200 hover:bg-slate-50 shadow-md transition-all">
             <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
               <span className="material-symbols-outlined text-9xl">nutrition</span>
             </div>
@@ -176,8 +180,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Hydration Metric (Replacing Steps for real data availability) */}
-          <div className="bg-white p-8 rounded-3xl relative overflow-hidden group border border-slate-200 hover:bg-slate-50 shadow-md transition-all">
+          {/* Hydration Metric */}
+          <div className="bg-white p-6 md:p-8 rounded-3xl relative overflow-hidden group border border-slate-200 hover:bg-slate-50 shadow-md transition-all">
             <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity text-primary">
               <span className="material-symbols-outlined text-9xl">water_drop</span>
             </div>
@@ -194,37 +198,37 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Recent AI Triage Summary (Bento Wide) */}
-          <div className="sm:col-span-3 bg-white rounded-3xl p-10 space-y-8 border border-slate-200 shadow-lg">
-            <div className="flex justify-between items-center">
-              <h2 className="text-3xl font-bold text-slate-900 flex items-center gap-4 tracking-tighter">
-                <span className="material-symbols-outlined text-primary text-3xl">analytics</span>
+          {/* Recent AI Triage Summary */}
+          <div className="sm:col-span-3 bg-white rounded-3xl p-6 md:p-10 space-y-6 md:space-y-8 border border-slate-200 shadow-lg">
+            <div className="flex flex-wrap justify-between items-center gap-3">
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-3 tracking-tighter">
+                <span className="material-symbols-outlined text-primary text-2xl md:text-3xl">analytics</span>
                 Latest Analysis
               </h2>
-              <span className="px-5 py-2 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-widest rounded-full border border-primary/20">{latestTriage.status}</span>
+              <span className="px-4 py-2 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-widest rounded-full border border-primary/20">{latestTriage.status}</span>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-              <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200">
-                <h3 className="font-bold text-primary mb-4 uppercase tracking-widest text-xs">AI Assessment</h3>
-                <p className="text-slate-700 leading-relaxed font-medium">{latestTriage.assessment}</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10">
+              <div className="bg-slate-50 p-5 md:p-8 rounded-2xl border border-slate-200">
+                <h3 className="font-bold text-primary mb-3 uppercase tracking-widest text-xs">AI Assessment</h3>
+                <p className="text-slate-700 leading-relaxed font-medium text-sm md:text-base">{latestTriage.assessment}</p>
               </div>
-              <div className="space-y-6">
-                <div className="flex items-center gap-6 p-6 rounded-2xl bg-surface-container/50 border border-outline-variant/10 transition-transform hover:scale-[1.02]">
-                  <div className="w-14 h-14 rounded-full bg-primary-container flex items-center justify-center text-primary shadow-sm">
-                    <span className="material-symbols-outlined text-2xl">health_metrics</span>
+              <div className="space-y-4 md:space-y-6">
+                <div className="flex items-center gap-4 p-4 md:p-6 rounded-2xl bg-surface-container/50 border border-outline-variant/10 transition-transform hover:scale-[1.02]">
+                  <div className="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-primary shadow-sm shrink-0">
+                    <span className="material-symbols-outlined text-xl">health_metrics</span>
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Recommendation</p>
-                    <p className="text-md font-bold text-on-background tracking-tight">{latestTriage.recommendation}</p>
+                    <p className="text-sm md:text-md font-bold text-on-background tracking-tight">{latestTriage.recommendation}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-6 p-6 rounded-2xl bg-surface-container/50 border border-outline-variant/10 transition-transform hover:scale-[1.02]">
-                  <div className="w-14 h-14 rounded-full bg-secondary-container flex items-center justify-center text-secondary shadow-sm">
-                    <span className="material-symbols-outlined text-2xl">update</span>
+                <div className="flex items-center gap-4 p-4 md:p-6 rounded-2xl bg-surface-container/50 border border-outline-variant/10 transition-transform hover:scale-[1.02]">
+                  <div className="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center text-secondary shadow-sm shrink-0">
+                    <span className="material-symbols-outlined text-xl">update</span>
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Last Update</p>
-                    <p className="text-md font-bold text-on-background tracking-tight">Real-time Sync Active</p>
+                    <p className="text-sm md:text-md font-bold text-on-background tracking-tight">Real-time Sync Active</p>
                   </div>
                 </div>
               </div>
@@ -232,17 +236,17 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Sidebar / Upcoming Appointment */}
-        <div className="md:col-span-4 space-y-8">
-          <div className="neural-gradient rounded-3xl p-10 text-on-primary shadow-xl shadow-primary/10 relative overflow-hidden group">
+        {/* Sidebar */}
+        <div className="lg:col-span-4 space-y-6 md:space-y-8">
+          <div className="neural-gradient rounded-3xl p-6 md:p-10 text-on-primary shadow-xl shadow-primary/10 relative overflow-hidden group">
             {/* Clinical background pattern */}
             <div className="absolute -top-12 -right-12 w-64 h-64 bg-white/5 rounded-full blur-3xl transition-transform group-hover:scale-110 duration-700"></div>
             <div className="relative z-10">
               <span className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-80">Next Appointment</span>
-              <h3 className="text-4xl font-extrabold mt-4 tracking-tighter leading-tight">Dr. Alisa Meyer</h3>
+              <h3 className="text-3xl md:text-4xl font-extrabold mt-3 tracking-tighter leading-tight">Dr. Alisa Meyer</h3>
               <p className="text-on-primary font-bold opacity-90 mt-1 uppercase text-xs tracking-widest">Senior Cardiologist</p>
               
-              <div className="mt-10 space-y-5">
+              <div className="mt-6 md:mt-10 space-y-4 md:space-y-5">
                 <div className="flex items-center gap-5 bg-white/10 p-5 rounded-2xl backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all">
                   <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
                     <span className="material-symbols-outlined text-white text-2xl">calendar_today</span>
@@ -257,12 +261,10 @@ export default function DashboardPage() {
                 </div>
               </div>
               
-              <div className="mt-12 flex gap-5">
-                <button className="flex-1 bg-white text-primary py-5 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform active:scale-95">
-                  Reschedule
-                </button>
-                <button className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all border border-white/10 shadow-lg">
-                  <span className="material-symbols-outlined text-2xl">videocam</span>
+              <div className="mt-8 md:mt-12 flex gap-4">
+                <button className="flex-1 bg-white text-primary py-4 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform active:scale-95">Reschedule</button>
+                <button className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all border border-white/10 shadow-lg">
+                  <span className="material-symbols-outlined text-xl">videocam</span>
                 </button>
               </div>
             </div>

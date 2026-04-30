@@ -9,6 +9,7 @@ import { secureStorage } from '../../lib/storage';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ProfilePage() {
+    const [mounted, setMounted] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -38,6 +39,7 @@ export default function ProfilePage() {
     const fileInputRef = useRef(null);
 
     useEffect(() => {
+        setMounted(true);
         const storedName = secureStorage.getItem('user_name');
         const storedEmail = secureStorage.getItem('user_email');
         const storedRole = secureStorage.getItem('user_role') || 'patient';
@@ -128,7 +130,7 @@ export default function ProfilePage() {
                 setAllergies(data.allergies || '');
                 setMedicalHistory(data.medical_history || '');
                 setEmergencyContact(data.emergency_contact || '');
-                setAge(data.age || '');
+                setAge(data.age?.toString() || '');
                 setGender(data.gender || '');
                 setProfilePic(data.avatar_url || '');
             }
@@ -187,48 +189,45 @@ export default function ProfilePage() {
                 secureStorage.setItem('user_name', name);
                 toast.success('Professional Profile Updated');
             } else {
+                const parsedAge = age ? parseInt(age) : null;
+                
+                // Prepare profile data
+                const profileData = {
+                    id: user.id,
+                    full_name: name,
+                    blood_type: bloodType,
+                    allergies: allergies,
+                    medical_history: medicalHistory,
+                    emergency_contact: emergencyContact,
+                    age: parsedAge,
+                    gender: gender,
+                    avatar_url: profilePic,
+                    updated_at: new Date(),
+                };
+
                 // Try full upsert
                 const { error } = await supabase
                     .from('profiles')
-                    .upsert({
-                        id: user.id,
-                        full_name: name,
-                        blood_type: bloodType,
-                        allergies: allergies,
-                        medical_history: medicalHistory,
-                        emergency_contact: emergencyContact,
-                        age: age,
-                        gender: gender,
-                        avatar_url: profilePic,
-                        updated_at: new Date(),
-                    });
+                    .upsert(profileData);
 
                 if (error) {
                     console.warn("Schema mismatch detected, falling back to basic profile sync...");
-                    // Retry without age/gender
+                    const { age: ageCol, gender: genderCol, ...basicData } = profileData;
                     const { error: retryError } = await supabase
                         .from('profiles')
-                        .upsert({
-                            id: user.id,
-                            full_name: name,
-                            blood_type: bloodType,
-                            allergies: allergies,
-                            medical_history: medicalHistory,
-                            emergency_contact: emergencyContact,
-                            avatar_url: profilePic,
-                            updated_at: new Date(),
-                        });
+                        .upsert(basicData);
                     
                     if (retryError) throw retryError;
+                    
                     secureStorage.setItem('user_name', name);
-                    toast.success('Profile Synced (Warning: Age/Gender columns missing in DB)');
+                    toast.error('Age/Gender not saved: Columns missing in Database.');
                 } else {
                     secureStorage.setItem('user_name', name);
                     toast.success('Profile Synced Successfully');
                 }
             }
             setIsEditing(false);
-            fetchProfileData();
+            await fetchProfileData();
         } catch (error) {
             toast.error('Sync Error: ' + error.message);
         } finally {
@@ -243,7 +242,7 @@ export default function ProfilePage() {
                 <div className="absolute inset-0 bg-[#FDFDFD]"></div>
                 
                 {/* The Frame */}
-                <div className="max-w-[1400px] mx-auto relative rounded-[2.5rem] md:rounded-[4rem] overflow-hidden bg-slate-900 aspect-[21/9] md:aspect-[25/9] shadow-2xl group">
+                <div className="max-w-[1400px] mx-auto relative rounded-[2rem] md:rounded-[4rem] overflow-hidden bg-slate-900 shadow-2xl group" style={{minHeight: '200px'}}>
                     {/* Background Image */}
                     <div className="absolute inset-0 opacity-40">
                         <img 
@@ -254,16 +253,16 @@ export default function ProfilePage() {
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
 
-                    <div className="absolute inset-0 p-8 md:p-16 flex flex-col justify-end">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
-                            <div className="space-y-4">
-                                <span className="inline-flex items-center gap-3 px-4 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-[9px] font-black tracking-[0.4em] uppercase text-blue-400 backdrop-blur-md">Identity Node</span>
-                                <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-none">{name}</h1>
-                                <p className="text-slate-400 font-medium text-lg md:text-xl uppercase tracking-widest">{role}</p>
+                    <div className="relative z-10 p-6 sm:p-10 md:p-16 pt-16 sm:pt-20 md:pt-24 pb-8 sm:pb-10 md:pb-14">
+                        <div className="flex flex-row flex-wrap justify-between items-end gap-4 sm:gap-6">
+                            <div className="space-y-2 sm:space-y-4 min-w-0">
+                                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-[8px] sm:text-[9px] font-black tracking-[0.3em] sm:tracking-[0.4em] uppercase text-blue-400 backdrop-blur-md">Identity Node</span>
+                                <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-none truncate max-w-[55vw] sm:max-w-none">{name}</h1>
+                                <p className="text-slate-400 font-medium text-sm sm:text-lg md:text-xl uppercase tracking-widest">{role}</p>
                             </div>
                             <button 
                                 onClick={() => setIsEditing(!isEditing)}
-                                className="bg-white text-slate-950 px-10 py-5 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.3em] hover:scale-105 active:scale-95 transition-all shadow-2xl"
+                                className="flex-shrink-0 bg-white text-slate-950 px-5 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 rounded-[1.5rem] sm:rounded-[2rem] font-black text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.3em] hover:scale-105 active:scale-95 transition-all shadow-2xl whitespace-nowrap"
                             >
                                 {isEditing ? 'Cancel Edit' : 'Edit Profile'}
                             </button>
@@ -433,9 +432,11 @@ export default function ProfilePage() {
                                         </div>
                                     </div>
 
-                                    <div className="pt-8 border-t border-slate-50">
-                                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] text-center">Last Synced: {new Date().toLocaleDateString()}</p>
-                                    </div>
+                                    {mounted && (
+                                        <div className="pt-8 border-t border-slate-50">
+                                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] text-center">Last Synced: {new Date().toLocaleDateString()}</p>
+                                        </div>
+                                    )}
                                 </motion.div>
                             )}
                         </AnimatePresence>

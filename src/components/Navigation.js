@@ -26,10 +26,13 @@ export default function Navigation() {
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      secureStorage.clear();
+      localStorage.removeItem('mediai_user');
+      sessionStorage.removeItem('admin_auth');
       router.push('/');
     } catch (error) {
       console.error('Logout error:', error);
+      localStorage.removeItem('mediai_user');
+      sessionStorage.removeItem('admin_auth');
       window.location.href = '/';
     }
   };
@@ -85,7 +88,7 @@ export default function Navigation() {
         { name: 'Chat', icon: 'chat_bubble', href: '/chat' },
       ];
     }
-    
+
     return [
       { name: 'Home', icon: 'home', href: '/dashboard' },
       { name: 'Chat', icon: 'chat_bubble', href: '/chat' },
@@ -122,16 +125,13 @@ export default function Navigation() {
           </div>
 
           <div className="relative" ref={notificationRef}>
-            <button 
+            <button
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
               className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-all relative ${isNotificationsOpen ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-surface-container-low border-outline-variant text-on-background hover:bg-surface-container-high'}`}
             >
               <span className="material-symbols-outlined text-[20px]">notifications</span>
-              {!isNotificationsOpen && (
-                <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
-              )}
             </button>
-            
+
             {isNotificationsOpen && (
               <div className="absolute right-0 mt-4 w-[320px] md:w-[380px] bg-white/95 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_20px_70px_rgba(0,0,0,0.15)] border border-slate-100 p-6 animate-in fade-in slide-in-from-top-4 duration-300 z-50 overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl"></div>
@@ -140,7 +140,7 @@ export default function Navigation() {
                     <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">Notifications</h3>
                     <button onClick={() => setNotifications([])} className="text-[9px] font-black uppercase tracking-widest text-blue-600 hover:underline">Clear All</button>
                   </div>
-                  
+
                   <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                     {notifications.length > 0 ? notifications.map((n) => (
                       <div key={n.id} className="flex gap-5 p-4 rounded-3xl hover:bg-slate-50 transition-colors group cursor-pointer border border-transparent hover:border-slate-100">
@@ -162,7 +162,7 @@ export default function Navigation() {
                       </div>
                     )}
                   </div>
-                  
+
                   {notifications.length > 0 && (
                     <div className="mt-8 pt-6 border-t border-slate-50">
                       <button className="w-full py-4 bg-slate-50 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors">
